@@ -29,8 +29,8 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 | Inspect a repository in three steps | 6 | Pass |
 | Point at a repository | 4 | Pass |
 | Permit Map checks documented Claude Code and Codex policy paths. | 9 | Pass |
-| Resolve each layer | 3 | Pass |
-| Worktree rules take priority over repo and global rules. | 9 | Pass |
+| Check the decision context | 4 | Pass |
+| Claude denies win. Codex project rules need the trust context. | 10 | Pass |
 | Share the result | 3 | Pass |
 | Print a table or write JSON and Markdown for review. | 10 | Pass |
 | Depart from your terminal | 4 | Pass |

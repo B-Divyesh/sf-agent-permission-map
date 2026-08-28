@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand, ValueEnum};
-use permit_map::{inspect, render_markdown, render_table};
+use permit_map::{
+    CodexTrust, InspectOptions, Report, inspect_with_options, render_markdown, render_table,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -22,18 +24,33 @@ enum Command {
         /// Output format for people, automation, or review
         #[arg(long, value_enum, default_value = "table")]
         format: Format,
+        /// Shorthand for --format json
+        #[arg(long)]
+        json: bool,
         /// Write the report to this file instead of standard output
         #[arg(short, long)]
         output: Option<PathBuf>,
         /// Skip policy files under the current user's home directory
         #[arg(long)]
         no_global: bool,
+        /// Whether Codex loads project .codex layers for this inspection
+        #[arg(long, value_enum, default_value = "unknown")]
+        codex_trust: Trust,
+        /// Selected Codex profile name, if the agent was started with --profile
+        #[arg(long)]
+        codex_profile: Option<String>,
+        /// Codex key=value override passed to the agent; repeat for each --config
+        #[arg(long = "codex-config")]
+        codex_overrides: Vec<String>,
     },
     /// Run the bundled sample in a temporary directory
     Demo {
         /// Output format for people, automation, or review
         #[arg(long, value_enum, default_value = "table")]
         format: Format,
+        /// Shorthand for --format json
+        #[arg(long)]
+        json: bool,
         /// Write the report to this file; defaults to permit-map-report.md in the demo directory
         #[arg(short, long)]
         output: Option<PathBuf>,
@@ -45,6 +62,23 @@ enum Format {
     Table,
     Json,
     Markdown,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum Trust {
+    Unknown,
+    Trusted,
+    Untrusted,
+}
+
+impl From<Trust> for CodexTrust {
+    fn from(value: Trust) -> Self {
+        match value {
+            Trust::Unknown => Self::Unknown,
+            Trust::Trusted => Self::Trusted,
+            Trust::Untrusted => Self::Untrusted,
+        }
+    }
 }
 
 fn main() -> ExitCode {
@@ -61,19 +95,44 @@ fn run(cli: Cli) -> Result<(), String> {
     match cli.command.unwrap_or(Command::Inspect {
         path: PathBuf::from("."),
         format: Format::Table,
+        json: false,
         output: None,
         no_global: false,
+        codex_trust: Trust::Unknown,
+        codex_profile: None,
+        codex_overrides: Vec::new(),
     }) {
         Command::Inspect {
             path,
             format,
+            json,
             output,
             no_global,
+            codex_trust,
+            codex_profile,
+            codex_overrides,
         } => {
-            let report = inspect(&path, !no_global)?;
-            write_output(format_report(&report, format)?, output)
+            let report = inspect_with_options(
+                &path,
+                InspectOptions {
+                    include_global: !no_global,
+                    codex_trust: codex_trust.into(),
+                    codex_profile,
+                    codex_overrides,
+                    ..InspectOptions::default()
+                },
+            )?;
+            write_output(
+                format_report(&report, if json { Format::Json } else { format })?,
+                output,
+                &report,
+            )
         }
-        Command::Demo { format, output } => run_demo(format, output),
+        Command::Demo {
+            format,
+            json,
+            output,
+        } => run_demo(if json { Format::Json } else { format }, output),
     }
 }
 
@@ -87,14 +146,61 @@ fn format_report(report: &permit_map::Report, format: Format) -> Result<String, 
     }
 }
 
-fn write_output(contents: String, output: Option<PathBuf>) -> Result<(), String> {
+fn write_output(contents: String, output: Option<PathBuf>, report: &Report) -> Result<(), String> {
     if let Some(path) = output {
+        if report
+            .policy_paths
+            .iter()
+            .any(|policy| same_path(policy, &path))
+            || is_vendor_policy_path(&path)
+        {
+            return Err(format!(
+                "Refusing to overwrite discovered vendor policy {}. Choose a report path outside the policy files.",
+                path.display()
+            ));
+        }
         fs::write(&path, contents).map_err(|e| format!("Cannot write {}: {e}", path.display()))?;
         println!("Wrote {}", path.display());
     } else {
         print!("{contents}");
     }
     Ok(())
+}
+
+fn is_vendor_policy_path(path: &Path) -> bool {
+    let components: Vec<_> = path.components().collect();
+    let Some(file) = path.file_name().and_then(|name| name.to_str()) else {
+        return false;
+    };
+    let in_claude = components
+        .iter()
+        .any(|component| component.as_os_str() == ".claude");
+    if in_claude && matches!(file, "settings.json" | "settings.local.json") {
+        return true;
+    }
+    let in_codex = components
+        .iter()
+        .any(|component| component.as_os_str() == ".codex");
+    in_codex
+        && (file == "config.toml" || file.ends_with(".config.toml") || file.ends_with(".rules"))
+}
+
+fn same_path(policy: &Path, candidate: &Path) -> bool {
+    let Ok(policy) = fs::canonicalize(policy) else {
+        return false;
+    };
+    let candidate = if candidate.exists() {
+        fs::canonicalize(candidate)
+    } else {
+        candidate
+            .parent()
+            .and_then(|parent| fs::canonicalize(parent).ok())
+            .and_then(|parent| candidate.file_name().map(|name| parent.join(name)))
+            .ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::NotFound, "output parent does not exist")
+            })
+    };
+    candidate.is_ok_and(|candidate| candidate == policy)
 }
 
 fn run_demo(format: Format, output: Option<PathBuf>) -> Result<(), String> {
@@ -127,10 +233,17 @@ fn run_demo(format: Format, output: Option<PathBuf>) -> Result<(), String> {
         include_str!("../examples/sample-repo/.codex/rules/release.rules"),
     )
     .map_err(demo_write_error)?;
-    let report = inspect(&root, false)?;
+    let report = inspect_with_options(
+        &root,
+        InspectOptions {
+            include_global: false,
+            codex_trust: CodexTrust::Trusted,
+            ..InspectOptions::default()
+        },
+    )?;
     let output = output
         .or_else(|| matches!(format, Format::Markdown).then(|| root.join("permit-map-report.md")));
-    write_output(format_report(&report, format)?, output)?;
+    write_output(format_report(&report, format)?, output, &report)?;
     eprintln!("Demo files: {}", root.display());
     eprintln!("Nothing outside this temporary directory was read or changed.");
     Ok(())

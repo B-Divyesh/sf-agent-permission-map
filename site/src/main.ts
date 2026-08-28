@@ -88,7 +88,7 @@ function home(): string {
       ${terminalPreview()}
     </div></section>
     <section class="steps shell" aria-labelledby="steps-title"><p class="eyebrow">Working timetable · line 03</p><h2 id="steps-title">Inspect a repository in three steps</h2>
-      <ol><li><span>01</span><div><h3>Point at a repository</h3><p>Permit Map checks documented Claude Code and Codex policy paths.</p></div></li><li><span>02</span><div><h3>Resolve each layer</h3><p>Worktree rules take priority over repo and global rules.</p></div></li><li><span>03</span><div><h3>Share the result</h3><p>Print a table or write JSON and Markdown for review.</p></div></li></ol>
+      <ol><li><span>01</span><div><h3>Point at a repository</h3><p>Permit Map checks documented Claude Code and Codex policy paths.</p></div></li><li><span>02</span><div><h3>Check the decision context</h3><p>Claude denies win. Codex project rules need the trust context.</p></div></li><li><span>03</span><div><h3>Share the result</h3><p>Print a table or write JSON and Markdown for review.</p></div></li></ol>
     </section>
     <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><p class="eyebrow light">Depart from your terminal</p><h2 id="install-title">Install the single binary</h2><p>Build from source with a current Rust toolchain.</p></div><div class="command"><code>cargo install --path .</code><button type="button" data-copy="cargo install --path .">Copy command</button></div></div></section>
     <section class="limits shell" aria-labelledby="limits-title"><div><p class="eyebrow">Clear boundaries · line 04</p><h2 id="limits-title">What Permit Map does not do</h2></div><ul><li>It does not run an agent.</li><li>It does not change vendor settings.</li><li>It does not read source files or credential stores.</li><li>It does not guess when vendor patterns overlap.</li></ul></section>
@@ -106,8 +106,8 @@ function rulesTable(): string {
 function demo(): string {
   return `${header()}<aside class="demo-banner" aria-label="Demo mode"><div class="shell"><p><strong>Demo — sample data, nothing is saved</strong></p><div><button type="button" id="reset-demo">Reset demo</button><a href="/#install" data-link>Start for real</a></div></div></aside>
   <main id="main"><section class="demo-head shell"><div><p class="eyebrow">Bundled sample · isolated preview</p><h1 tabindex="-1">Review the resolved permission map</h1><p>The sample combines Claude Code and Codex policies from four files.</p></div><div class="demo-summary" aria-label="Report summary"><div><strong>4</strong><span>sources</span></div><div><strong>9</strong><span>effective</span></div><div><strong>1</strong><span>shadowed</span></div></div></section>
-  <section class="report shell" aria-labelledby="rules-title"><div class="report-heading"><div><h2 id="rules-title">Resolved rules</h2><p id="demo-status" aria-live="polite">Worktree rules replace exact matches from lower layers.</p></div><a class="ticket secondary" href="/terminal-demo.svg" download>Download terminal recording</a></div>${rulesTable()}</section>
-  <section class="adapter-notes shell" aria-labelledby="notes-title"><h2 id="notes-title">Adapter notes</h2><ul><li>Exact duplicate matchers resolve by layer: worktree, repo, then global.</li><li>At one layer, deny wins over ask and allow.</li><li>Pattern overlap stays visible because vendor meanings can differ.</li></ul></section>
+  <section class="report shell" aria-labelledby="rules-title"><div class="report-heading"><div><h2 id="rules-title">Resolved rules</h2><p id="demo-status" aria-live="polite">Claude denies win across scopes. This sample marks its Codex project as trusted.</p></div><a class="ticket secondary" href="/terminal-demo.svg" download>Download terminal recording</a></div>${rulesTable()}</section>
+  <section class="adapter-notes shell" aria-labelledby="notes-title"><h2 id="notes-title">Adapter notes</h2><ul><li>Claude evaluates exact matches as deny, then ask, then allow across scopes.</li><li>Codex reads system, user, selected profile, and trusted project layers. Unknown trust stays unresolved.</li><li>Pattern overlap stays visible because vendor meanings can differ.</li></ul></section>
   </main>${footer()}`;
 }
 
@@ -173,7 +173,7 @@ function bindActions(): void {
   });
   document.querySelector<HTMLButtonElement>("#reset-demo")?.addEventListener("click", () => {
     const status = document.querySelector<HTMLParagraphElement>("#demo-status")!;
-    status.textContent = "Sample reset. Worktree rules replace exact matches from lower layers.";
+    status.textContent = "Sample reset. Claude denies win across scopes; the sample Codex project is trusted.";
     document.querySelector<HTMLTableElement>("table")?.classList.add("reset-pulse");
     setTimeout(() => document.querySelector<HTMLTableElement>("table")?.classList.remove("reset-pulse"), 240);
   });

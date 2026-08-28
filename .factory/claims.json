@@ -43,16 +43,58 @@
   },
   {
     "id": "cli-local",
-    "claim": "The CLI has no network or telemetry client.",
+    "claim": "The CLI does not launch agents and has no network or telemetry client.",
     "where": "privacy page and README",
     "test": "npm test -- --grep @claim:cli-local",
     "sandbox": "clean repository checkout; inspect runtime dependencies and Rust source for network clients"
   },
   {
     "id": "resolution-order",
-    "claim": "Exact worktree matchers replace repo and global matchers; deny wins at the same layer.",
+    "claim": "Claude exact matches resolve deny, then ask, then allow across every discovered scope.",
     "where": "landing steps, demo notes, reports, and README",
     "test": "npm test -- --grep @claim:resolution-order",
     "sandbox": "temporary repository with duplicate exact matchers across and within layers"
+  },
+  {
+    "id": "codex-context",
+    "claim": "Codex project policy stays unresolved until its trust context is supplied; trusted nested project files override parent project files.",
+    "where": "landing steps, demo notes, reports, and README",
+    "test": "npm test -- --grep @claim:codex-context",
+    "sandbox": "temporary Git-like repository with root and nested .codex/config.toml files"
+  },
+  {
+    "id": "vendor-policy-safe",
+    "claim": "Permit Map refuses to write a report over a discovered vendor policy file.",
+    "where": "landing boundaries and README",
+    "test": "npm test -- --grep @claim:vendor-policy-safe",
+    "sandbox": "temporary repository; request Markdown output at .claude/settings.json and assert the original JSON remains"
+  },
+  {
+    "id": "cli-errors",
+    "claim": "Missing paths and malformed supported policy files exit with code 2.",
+    "where": "README usage",
+    "test": "npm test -- --grep @claim:cli-errors",
+    "sandbox": "temporary repository with a missing path and malformed Claude settings JSON"
+  },
+  {
+    "id": "vendor-boundaries",
+    "claim": "Different vendors never shadow one another, and overlapping patterns remain visible.",
+    "where": "README resolution rules and landing boundaries",
+    "test": "npm test -- --grep @claim:vendor-boundaries",
+    "sandbox": "temporary repository with Claude patterns and a Codex command rule"
+  },
+  {
+    "id": "touch-targets",
+    "claim": "Visible home-page links meet the 44 px touch-target baseline at 390 px.",
+    "where": "site accessibility contract",
+    "test": "npm test -- --grep @claim:touch-targets",
+    "sandbox": "390 × 844 browser viewport; measure each visible home-page link"
+  },
+  {
+    "id": "demo-isolated",
+    "claim": "The demo command changes nothing outside its temporary directory.",
+    "where": "README sandbox section and CLI stderr",
+    "test": "npm test -- --grep @claim:demo-isolated",
+    "sandbox": "fresh caller directory with a sentinel file; run the built demo binary and verify the caller remains unchanged"
   }
 ]

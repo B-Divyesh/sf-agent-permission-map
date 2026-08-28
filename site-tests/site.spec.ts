@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { existsSync, readFileSync } from "node:fs";
 
 const routes = ["/", "/demo", "/privacy", "/terms", "/missing-route"];
 
@@ -10,7 +11,9 @@ for (const route of routes) {
     await expect(page.locator("main")).toHaveCount(1);
     await expect(page.locator("h1")).toHaveCount(1);
     await expect(page).toHaveTitle(/Permit Map/);
-    const results = await new AxeBuilder({ page }).analyze();
+    // axe-core/playwright 4.10 ships Playwright 1.57 types; the runtime API is
+    // compatible with the pinned 1.58 runner.
+    const results = await new AxeBuilder({ page: page as never }).analyze();
     const findings = results.violations.filter(item => ["serious", "critical"].includes(item.impact ?? ""));
     expect(findings).toEqual([]);
   });
@@ -54,4 +57,12 @@ test("390px layout stays inside the viewport", async ({ page }) => {
     const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(hasOverflow, `${route} should not overflow`).toBeFalsy();
   }
+});
+
+test("production output has route documents and a 404 response override", () => {
+  for (const path of ["dist/site/demo/index.html", "dist/site/privacy/index.html", "dist/site/terms/index.html", "dist/site/404/index.html"]) {
+    expect(existsSync(path), `${path} should be emitted`).toBeTruthy();
+  }
+  const config = JSON.parse(readFileSync("dist/site/staticwebapp.config.json", "utf8"));
+  expect(config.responseOverrides["404"]).toMatchObject({ rewrite: "/404/index.html", statusCode: 404 });
 });

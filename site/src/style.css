@@ -75,7 +75,7 @@ p { max-width: 66ch; }
 .preview-section { padding-block: 88px; color: var(--paper); background: var(--ink); border-block: 8px double var(--paper-deep); }
 .preview-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 56px; align-items: center; }
 .preview-grid > div > p:not(.eyebrow) { color: #d8d7cb; font-size: 1.1rem; }
-.text-link { color: #f0c979; font-weight: 800; }
+.text-link { min-height: 44px; display: inline-flex; align-items: center; color: #f0c979; font-weight: 800; }
 .terminal { min-width: 0; margin: 0; border: 1px solid #6b827b; box-shadow: 16px 16px 0 #071513; background: #0b1817; }
 .terminal figcaption { padding: 10px 16px; border-bottom: 1px solid #435a54; color: #bcc8c3; font-family: ui-monospace, monospace; font-size: .78rem; }
 .terminal figcaption span { margin-right: 12px; color: var(--signal); letter-spacing: .25em; }
@@ -125,7 +125,7 @@ tr.effective { border-left: 6px solid var(--allow); } tr.shadowed { border-left:
 .not-found { min-height: 680px; display: grid; align-content: center; justify-items: start; padding-block: 80px; }.not-found h1 { max-width: 800px; }.signal-mark { width: 100px; height: 100px; display: grid; place-items: center; margin-bottom: 24px; border: 8px double var(--ink); border-radius: 50%; background: var(--signal); }.signal-mark span { width: 12px; height: 60px; transform: rotate(45deg); background: var(--paper); }.not-found > p:not(.eyebrow) { margin: 24px 0 32px; }
 
 footer { padding-block: 48px; color: var(--paper); background: #0c1917; border-top: 6px double var(--paper); }
-.footer-grid { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 32px; }.footer-grid p { margin: 0; }.footer-grid span { color: #c0cbc3; }.footer-grid nav { display: flex; flex-wrap: wrap; gap: 20px; }.footer-grid a { color: #f0cf89; }.footer-grid .build { grid-column: 1 / -1; padding-top: 24px; border-top: 1px solid #82948d; color: #c0cbc3; font-size: .8rem; }
+.footer-grid { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 32px; }.footer-grid p { margin: 0; }.footer-grid span { color: #c0cbc3; }.footer-grid nav { display: flex; flex-wrap: wrap; gap: 12px; }.footer-grid a { min-height: 44px; display: inline-flex; align-items: center; color: #f0cf89; }.footer-grid .build { grid-column: 1 / -1; padding-top: 24px; border-top: 1px solid #82948d; color: #c0cbc3; font-size: .8rem; }
 
 @media (max-width: 850px) {
   .hero { grid-template-columns: 1fr; padding-top: 56px; }

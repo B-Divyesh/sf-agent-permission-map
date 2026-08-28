@@ -2,9 +2,9 @@
 
 Resolve coding-agent permissions before an agent runs.
 
-Permit Map is for engineers who use Claude Code or Codex across several repositories. The local CLI finds known policy files, resolves exact matches by layer, marks shadowed rules, and writes a reviewable report.
+Permit Map is for engineers who use Claude Code or Codex across several repositories. The local CLI finds documented policy files, resolves supported exact matches, marks shadowed or unresolved rules, and writes a reviewable report.
 
-It does not run agents, change settings, scan source files, or store secrets. Permit Map is free software under the [MIT license](LICENSE).
+It does not run agents, scan source files, or store secrets. It refuses to write a report over a discovered vendor policy. Permit Map is free software under the [MIT license](LICENSE).
 
 Website: <https://agent-permission-map.sociobot.in>  
 One-click sample: <https://agent-permission-map.sociobot.in/demo>
@@ -50,6 +50,8 @@ Produce JSON for scripts:
 
 ```sh
 permit-map inspect . --format json
+# equivalent scripting shorthand
+permit-map inspect . --json
 ```
 
 Successful reports exit with code `0`. Missing paths, unreadable files, and malformed supported files exit with code `2` and an actionable error.
@@ -63,24 +65,26 @@ Permit Map opens these paths automatically:
 | Claude Code | Global | `~/.claude/settings.json` |
 | Claude Code | Repo | `<repo>/.claude/settings.json` |
 | Claude Code | Worktree | `<repo>/.claude/settings.local.json` |
-| Codex | Global | `~/.codex/config.toml`, `~/.codex/rules/*.rules` |
-| Codex | Repo | `<repo>/.codex/config.toml`, `<repo>/.codex/rules/*.rules` |
-| Codex | Worktree | `<repo>/.codex/config.local.toml`, `<repo>/.codex/rules.local/*.rules` |
+| Codex | System | `/etc/codex/config.toml` when present |
+| Codex | User | `~/.codex/config.toml`, `~/.codex/rules/*.rules` |
+| Codex | Profile | `~/.codex/<profile>.config.toml` when passed with `--codex-profile` |
+| Codex | Project | Every `.codex/config.toml` and `.codex/rules/*.rules` from the project root to the inspected directory |
 
-The Claude adapter reads `permissions.allow`, `permissions.ask`, and `permissions.deny`. The Codex adapter reads `sandbox_mode`, `approval_policy`, and `prefix_rule` entries with allow, prompt, or forbidden decisions.
+The Claude adapter reads `permissions.allow`, `permissions.ask`, and `permissions.deny`. The Codex adapter reads `sandbox_mode`, `approval_policy`, and `prefix_rule` entries with allow, prompt, or forbidden decisions. It never treats the undocumented `config.local.toml` path as Codex configuration.
 
 ## Resolution rules
 
-Permit Map uses a small, explicit cross-vendor model:
+Permit Map uses vendor-specific, explicit rules:
 
-1. An exact matcher in a worktree shadows the same matcher in repo and global layers.
-2. An exact repo matcher shadows the same global matcher.
-3. At one layer, deny wins over ask and allow.
-4. Different vendors never shadow one another.
+1. Claude exact matches resolve deny, then ask, then allow across every discovered scope.
+2. Codex resolves system, user, selected profile, and trusted project files from the root to the inspected directory. The closest project file wins.
+3. Codex project rows stay `unresolved` until you state `--codex-trust trusted` or `--codex-trust untrusted`.
+4. Pass `--codex-profile NAME` and repeat `--codex-config key=value` for context supplied to the Codex invocation.
+5. Different vendors never shadow one another.
 
 Pattern overlap remains visible but unresolved. Vendor match languages can assign different meanings to broad and narrow patterns. Every report includes this limitation instead of guessing.
 
-Codex sandbox and approval settings are controls rather than command matchers. Permit Map compares those controls by name across layers and shows the selected value.
+Codex sandbox and approval settings are controls rather than command matchers. Permit Map compares those controls by name across layers and shows the selected value only when the trust context is known. CLI flags the inspector cannot observe remain a report limitation unless you supply them.
 
 ## Develop and verify
 
@@ -89,6 +93,8 @@ Requirements: Rust 1.85 or later, Node 22 or later, and Chromium for Playwright 
 ```sh
 npm install
 npm test
+npm run typecheck
+npm run lint
 npm run build
 ```
 

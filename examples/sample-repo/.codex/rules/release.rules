@@ -1,0 +1,3 @@
+# Production releases need a human decision.
+prefix_rule(pattern = ["git", "push"], decision = "prompt")
+prefix_rule(pattern = ["rm", "-rf"], decision = "forbidden")

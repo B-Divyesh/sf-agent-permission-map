@@ -4,3 +4,8 @@ dist/
 *.log
 graphify-out/
 .DS_Store
+target/
+node_modules/
+dist/
+test-results/
+playwright-report/

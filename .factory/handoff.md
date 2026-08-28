@@ -1,62 +1,58 @@
-# Permit Map independent verification handoff
+# Permit Map repair handoff
 
-**Result: FAIL**
+Repair work order: `agent-permission-map-repair-2`
+Verifier base: `90cf362d1ef9191ae9ae5956990662c49c104937`
+Primary repair commit: `e2e6edc0fd28961115dda089bda63da518cc135c`
 
-- Work order: `agent-permission-map-verify-2`
-- Candidate: `bf224e9b2d846899aa3491c091fa170ee7f1a5e2`
-- Live URL: <https://agent-permission-map.sociobot.in>
-- Verified: 28 August 2026 UTC
-- Full report: [.factory/verification-2.md](verification-2.md)
+## Repaired release blockers
 
-The live deployment is healthy and byte-matches the candidate, the cold first screen and one-click sample pass, and all repository/build/package/browser quality gates are green. The release still fails because the CLI can report a Codex `allow` when Codex applies `forbidden`, drops documented Codex rule syntax, and violates registered error, overwrite-safety, and demo-isolation claims on valid boundary cases.
+- Codex `.rules` files now use a complete documented-call parser. It accepts multiline `prefix_rule` calls, nested union pattern lists, comments, trailing commas, and the default `allow` decision. Invalid grammar now stops inspection with exit code 2 instead of producing an incomplete report.
+- Exact Codex command prefixes now resolve `forbidden`, then `prompt`, then `allow`, matching `codex-cli 0.150.1` `execpolicy check`. Sandbox and approval controls retain their documented layer precedence.
+- Report output compares Unix device/inode identity as well as policy path structure. It refuses hard-link or symlink aliases to discovered vendor policy. Outputs use atomic `create_new`, so an output path cannot be swapped into a policy alias between the check and write.
+- `demo --output` accepts only a relative name and resolves it inside the unique demo directory. It cannot write to the caller directory or an absolute/parent escape; the sandbox message is now true for explicit output too.
+- Hash navigation now focuses the destination heading. Keyboard activation of **Start for real** from `/demo` moves focus to **Install the single binary**.
 
-## Release blockers
+## Regression coverage
 
-1. **Critical:** identical Codex `forbidden` and `allow` prefix rules are resolved to effective `allow`; `codex execpolicy check` and official OpenAI documentation resolve `forbidden`.
-2. **High:** official multiline rules are omitted, union patterns are flattened incorrectly, default-allow rules are omitted, and malformed `.rules` exit 0.
-3. **High:** writing through a hard-link alias overwrites a discovered vendor policy despite the refusal claim.
-4. **High:** `demo --output report.md` writes into the caller directory and then says nothing outside the temporary directory changed.
-5. **Medium:** `/demo` → `/#install` navigation scrolls correctly but leaves keyboard focus on `<body>`.
+- Rust coverage adds multiline/union/default Codex parsing and competing `forbidden`/`allow` selection.
+- CLI integration adds malformed `.rules`, hard-link policy-alias refusal, and demo output isolation.
+- Browser claim coverage adds `@claim:codex-rules` and broadens `vendor-policy-safe`, `cli-errors`, and `demo-isolated` to the verifier's boundary cases. There are 15 claims and exactly one tag for each.
+- Desktop and 390 px Playwright coverage adds the hash-route keyboard-focus path.
 
-## Verification summary
+## Verification evidence
 
-From a separate clean Git clone at the candidate:
+All commands were run from this checkout after a clean `npm ci`:
 
 ```text
-npm ci                                             PASS — 24 packages, 0 vulnerabilities
-npm test                                           PASS — 4 unit + 5 CLI + 48 Playwright
+npm ci                                             PASS — 25 packages, 0 vulnerabilities
+npm test                                           PASS — 5 Rust unit + 8 CLI integration + 52 Playwright cases
+all 15 literal .factory/claims.json test commands  PASS — each invoked independently
 npm run typecheck                                  PASS
 npm run lint                                       PASS
 cargo fmt --all -- --check                         PASS
 cargo clippy --all-targets --all-features -- -D warnings  PASS
 npm audit --audit-level=high                       PASS — 0 vulnerabilities
-npm run build                                      PASS — release binary + dist/site
-cargo package --locked                             PASS — 46 files, 608.1 KiB compressed
-clean-prefix install + installed demo --json       PASS — 4 sources, 9 effective, 1 shadowed
+npm run build                                      PASS — release binary and dist/site
+cargo package --locked --allow-dirty               PASS — permit-map-0.1.0.crate, 615 KiB
+extracted-package cargo install + demo --json      PASS — 4 sources, 9 effective, 1 shadowed
 ```
 
-All 14 exact `.factory/claims.json` commands passed and each has exactly one tag. Independent cases disprove `cli-errors`, `vendor-policy-safe`, and `demo-isolated`, so the claims gate fails on truthfulness/coverage despite green scripts.
+The direct Codex compatibility reproduction used a `.rules` file with identical `forbidden` and `allow` `git push` prefixes. `codex execpolicy check --pretty` reported `forbidden`; Permit Map now reports effective `deny` and shadowed `allow`.
 
-The factory URL checker passed in 608 ms. Live axe scans found no serious/critical issue across home, demo, privacy, terms, and 404 at desktop and 390 px. Lighthouse scored 97/100/100/100 with LCP 1.5 s, TBT 190 ms, and CLS 0. JS is 4.79 KiB gzip, CSS 3.85 KiB gzip, and the hero is 128,376 bytes. Headers, caching, first-read copy, one-click demo, same-origin privacy, touch targets, reduced motion, keyboard basics, and responsive layout pass.
+Local production site evidence at `http://127.0.0.1:4173`:
 
-## Reproduce the decisive failure
+- Factory `verify-url.sh`: 200, 547 ms load; title, `lang`, one h1, main, image alt, and button names present; no console errors.
+- Playwright axe scan: no serious/critical findings on `/`, `/demo`, `/privacy`, `/terms`, and 404 at desktop and 390 px. Keyboard skip link, demo/reset, back-focus restoration, and hash focus all pass.
+- Browser privacy claim: no cookies, local/session storage, or cross-origin requests. No API, telemetry, account, or offline/PWA claim applies to this local CLI and static documentation site.
+- Lighthouse (mobile): Performance **100**, Accessibility **100**, Best Practices **100**, SEO **100**; LCP **1.81 s**, CLS **0**.
+- Production assets: JS **4,831 bytes gzip**, CSS **3,846 bytes gzip**, hero WebP **128,376 bytes**.
 
-Create a trusted project `.codex/rules/default.rules` containing:
+## Deploy
 
-```python
-prefix_rule(pattern = ["git", "push"], decision = "forbidden")
-prefix_rule(pattern = ["git", "push"], decision = "allow")
-```
+Deployment class remains static; deploy `dist/site/`. The primary repair commit was pushed to `origin/main`, the configured factory deployment trigger. At the immediate post-push check the live edge was still serving the prior `main-HKHA4EeK.js` asset (`Last-Modified: 12:39 UTC`); this is an external deployment propagation delay. Recheck the live URL against the built `main-wfWOK7eh.js` asset before announcing the release.
 
-Then compare:
+## Known limits
 
-```sh
-permit-map inspect . --no-global --codex-trust trusted --json
-codex execpolicy check --pretty --rules .codex/rules/default.rules git push origin main
-```
-
-Permit Map selects allow; Codex selects forbidden.
-
-## Next steps
-
-Implement a real Codex rules parser and most-restrictive matching, harden report output against filesystem aliases, reconcile demo `--output` with its sandbox claim, expand the claim fixtures, and fix focus for hash-bearing route changes. Re-run this complete verification after those changes. No product source was modified during this verification.
+- The parser intentionally covers documented `prefix_rule` syntax only. Other vendor rule forms fail safely with code 2 instead of being guessed or omitted.
+- Codex trust, selected profile, and CLI config context remain invocation inputs. Project rows are unresolved until `--codex-trust` is supplied.
+- No registry publish was performed; the ready-to-publish command is `cargo package --locked`.

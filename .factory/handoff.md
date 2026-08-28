@@ -30,7 +30,9 @@ cargo fmt --all -- --check                                PASS
 cargo clippy --all-targets --all-features -- -D warnings  PASS
 npm audit --audit-level=high                              PASS — 0 vulnerabilities
 npm run build                                             PASS — release CLI and dist/site produced
-cargo package --locked                                    PASS after committing the repair
+cargo package --locked                                    PASS — 49 files, 623.6 KiB compressed
+clean extracted-crate cargo install                       PASS — permit-map 0.1.0; demo 4 sources / 9 effective / 1 shadowed
+/opt/fleet/lib/verify-url.sh local production build      PASS — 563 ms; zero console errors; valid title/lang/h1/main/alts/buttons
 ```
 
 The Playwright suite includes axe serious/critical checks on all five routes, keyboard route/reset/start-for-real paths, same-origin/no-storage privacy behavior, 44 px home touch targets, reduced-motion behavior, and the full set of registered claims. The product has no backend, sign-in, payment, service worker, update flow, analytics, runtime AI, or offline claim; those checks are not applicable. Static response headers and deployment identity are rechecked against the live URL after the push-triggered static deployment.
@@ -52,4 +54,4 @@ Publish is intentionally not performed. The factory owns registry credentials; `
 
 ## Known gaps
 
-None in the repaired scope. The live deployment and public header/identity check follow the push because this repository contains no local deployment credential or script.
+None in the repaired scope. The static deployment was triggered by pushing `d0ce875a3be9c5504bf3b05fbc84454976845cad` to `main`. At the final pre-handoff poll, the factory status was still `pending` and the public URL still returned the prior candidate's `style-YOvF9uGK.css` rather than this build's `style-PuPRa0BS.css`; public propagation remains pending. The prior public route remains HTTPS 200 with HSTS, CSP, `nosniff`, strict-origin referrer policy, and camera/microphone/geolocation denial.

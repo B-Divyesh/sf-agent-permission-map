@@ -1,6 +1,6 @@
 # Permit Map copy audit
 
-Audited 28 August 2026, polish round 4. Counts treat hyphenated terms as one word. Interface labels and headings are included even when they are fragments. Commands, URLs, rule-table values, and file paths are examples or data rather than prose. No line exceeds 22 words. No line contains a banned marketing word or decorative transit lore.
+Audited 28 August 2026, polish round 5. Counts treat hyphenated terms as one word. Interface labels and headings are included even when they are fragments. Commands, URLs, rule-table values, and file paths are examples or data rather than prose. No line exceeds 22 words. No line contains a banned marketing word or decorative transit lore.
 
 ## First screen
 
@@ -85,7 +85,7 @@ The error claim covers every listed input class. Its test asserts the cause, exi
 
 ## Catalog description
 
-"Inspect coding-agent permissions before an agent runs." — 7 words, 54 characters, starts with a verb.
+"Resolve coding-agent permissions before an agent runs." — 7 words, 54 characters, starts with a verb.
 
 ## Terminology
 

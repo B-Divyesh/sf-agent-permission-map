@@ -1,0 +1,14 @@
+{
+  "url": "https://agent-permission-map.sociobot.in/privacy",
+  "loadMs": 667,
+  "errors": [],
+  "a11y": {
+    "title": "Privacy — Permit Map",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 754
+  }
+}

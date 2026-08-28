@@ -1,0 +1,14 @@
+{
+  "url": "https://agent-permission-map.sociobot.in/",
+  "loadMs": 906,
+  "errors": [],
+  "a11y": {
+    "title": "Permit Map — resolve coding-agent permissions",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 1904
+  }
+}

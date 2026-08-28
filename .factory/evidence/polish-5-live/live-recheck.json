@@ -1,0 +1,90 @@
+{
+  "routeChecks": [
+    {
+      "path": "/",
+      "title": "Permit Map — resolve coding-agent permissions",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "seriousAxeViolations": 0
+    },
+    {
+      "path": "/?demo=1",
+      "title": "Demo — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "seriousAxeViolations": 0
+    },
+    {
+      "path": "/demo",
+      "title": "Demo — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "seriousAxeViolations": 0
+    },
+    {
+      "path": "/privacy",
+      "title": "Privacy — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "seriousAxeViolations": 0
+    },
+    {
+      "path": "/terms",
+      "title": "Terms — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "seriousAxeViolations": 0
+    }
+  ],
+  "reset": {
+    "className": "first-screen-table reset-pulse",
+    "opacity": [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1"
+    ],
+    "rows": [
+      {
+        "text": "denyBash(git status:*)settings.local.json",
+        "bottom": 441.90625
+      },
+      {
+        "text": "allowBash(npm test:*)settings.json",
+        "bottom": 466.125
+      },
+      {
+        "text": "denyRead(.env*)settings.local.json",
+        "bottom": 491.34375
+      }
+    ]
+  },
+  "resetColorContrastViolations": 0,
+  "offlineReset": true,
+  "notFound": {
+    "status": 404,
+    "title": "Page not found — Permit Map",
+    "h1": "This page was not found"
+  },
+  "privacy": {
+    "origins": [
+      "https://agent-permission-map.sociobot.in"
+    ],
+    "storage": {
+      "local": 0,
+      "session": 0,
+      "indexedDb": 0,
+      "caches": 0
+    },
+    "cookies": 0,
+    "serviceWorkers": 0
+  },
+  "consoleErrors": []
+}

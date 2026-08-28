@@ -1,20 +1,41 @@
-# Permit Map — review 5 handoff
+# Permit Map — polish round 5 handoff
 
 ## Delivered
 
-Completed a read-only adversarial review of the live Permit Map site and CLI at repository commit 34c81adb6ddd8207e4fcdfbf27084d7e556b496f. Product code was not changed.
+Repaired review candidate `34c81adb6ddd8207e4fcdfbf27084d7e556b496f` in product commit `af8cd1da4aceaf7cdd4daaf3f729557237217d78`.
 
-The verdict in .factory/review-5.md is **FAIL** with one blocking finding and one minor finding. The 390 px demo table fades to opacity 0.58 after Reset demo, causing seven transient WCAG text-contrast failures. The CLI also promises that demo mode reads nothing outside its temporary directory, while the registered test verifies writes only. Earlier findings F-1-1 through F-4-3 remain fixed.
+- Reset demo now signals with an opaque teal outline. It never lowers sample-table text contrast.
+- The active-reset test runs at 390 × 844, samples the feedback midpoint, runs axe, and directly measures every visible table treatment at 4.5:1 or better.
+- The CLI demo contract now precisely says it does not read caller-directory data or change anything outside its temporary directory.
+- `demo-isolated` now proves that contract with an `LD_PRELOAD` `open`/`openat` trace against real policy and secret-shaped caller decoys.
+- Updated CLI, README, demo documentation, claims, copy audit, changelog, and catalog description. The catalog line is verb-first, 54 characters, and within the 120-character limit.
+- Preserved the art-deco transit-poster visual system, isolated `?demo=1` browser demo, real routing and legal pages, mobile table layout, focus transfer, and designed 404.
 
-## Verification
+## How to run and verify
 
-- Used fresh 390 × 844 and 1440 × 1000 browser contexts on https://agent-permission-map.sociobot.in.
-- Verified the one-click demo, real sample rows, Reset, offline reset test, storage isolation, same-origin requests, deep links, Back/focus behavior, metadata, 404 response, headers, and every live link.
-- Ran all 22 literal claim commands separately from clean clone /tmp/permit-map-review5.3BOvtn/repo; all passed.
-- Ran npm test, npm run typecheck, npm run lint, and npm run build in that clone; all passed. The suite reported 6 Rust unit tests, 8 Rust integration tests, and 86 Playwright tests.
-- Ran the CLI demo from a separate temporary caller directory. It returned 4 sources, 9 effective rules, 1 shadowed rule, and left the caller sentinel unchanged. A review-time open/openat trace found no caller-path read, but this proof is not part of the registered test.
-- Ran the factory URL verifier and Playwright axe checks. Settled routes passed; freezing the Reset animation at 120 ms reproduced contrast ratios from 2.50:1 to 3.73:1.
+```sh
+npm ci
+npm test
+npm run typecheck
+npm run lint
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+npm run build
+cargo package --locked
+```
 
-## Required next step
+The static deployment directory is `dist/site`. Run the CLI sample with `cargo run -- demo --format json`. Open the browser sample directly at `https://agent-permission-map.sociobot.in/?demo=1`.
 
-Remove the table-wide opacity animation or replace it with opaque feedback that keeps all text at 4.5:1 or higher. Add a 390 px post-Reset contrast test. Register and trace the CLI demo’s caller-read isolation, or narrow that promise. Then repeat the full review.
+## Exact verification evidence
+
+- Fresh remote clone: `/tmp/permit-map-polish5-af8cd1d` at `af8cd1da4aceaf7cdd4daaf3f729557237217d78`.
+- `npm ci`, full `npm test`, and every one of the 22 literal `.factory/claims.json` test commands passed there. The full suite covered 6 Rust unit tests, 8 Rust integration tests, and 88 Playwright tests. The literal-claim transcript is `/tmp/permit-map-polish5-af8cd1d/clean-claims.log`; release-check transcript is `/tmp/permit-map-polish5-af8cd1d/clean-release.log`.
+- Clean-clone typecheck, lint, format, clippy, high-severity audit, production build, and `cargo package --locked` passed. Package result: 20 files, 104.7 KiB (27.8 KiB compressed).
+- Deployment: `401fe479-1c36-47a6-8f7e-811e00d3979c` via `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site`.
+- Cold live verification passed for [home](evidence/polish-5-live/home/verify.json), [demo](evidence/polish-5-live/demo/verify.json), [privacy](evidence/polish-5-live/privacy/verify.json), and [terms](evidence/polish-5-live/terms/verify.json). All report title, language, one H1, main landmark, image/button basics, and no console errors.
+- [Live recheck](evidence/polish-5-live/live-recheck.json) proves the live one-click path, three phone-visible rows, active-reset opacity of 1, zero active-reset contrast violations, offline reset, no serious/critical axe violations, no third-party origins or browser persistence, and the designed HTTP 404. The active state is captured in [reset-midpoint-mobile.png](evidence/polish-5-live/demo/reset-midpoint-mobile.png).
+- Live mobile Lighthouse: Performance 100, Accessibility 100, Best Practices 100, SEO 100; LCP 839 ms, CLS 0, TBT 13.5 ms in [lighthouse-mobile.json](evidence/polish-5-live/lighthouse-mobile.json).
+
+## Known gaps
+
+None.

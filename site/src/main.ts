@@ -39,7 +39,7 @@ function header(): string {
 }
 
 function footer(): string {
-  return `<footer><div class="shell footer-grid"><p><strong>Permit Map</strong><br><span>Resolve coding-agent permissions before a session.</span></p>
+  return `<footer><div class="shell footer-grid"><p><strong>Permit Map</strong><br><span>Resolve coding-agent permissions before an agent runs.</span></p>
     <nav aria-label="Footer navigation"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://hello-factory.sociobot.in" rel="external">Built by Param Factory <span class="sr-only">(external)</span></a></nav>
     <p class="build">Version 0.1.0 · build 2026.08.28</p></div></footer>`;
 }
@@ -72,8 +72,7 @@ function home(): string {
   return `${header()}<main id="main">
     <section class="hero shell" aria-labelledby="home-title">
       <div class="hero-copy">
-        <p class="eyebrow">Local policy inspector · line 01</p>
-        <h1 id="home-title" tabindex="-1">See agent permissions before they run</h1>
+        <h1 id="home-title" tabindex="-1">Resolve coding-agent permissions before an agent runs</h1>
         <p class="lede">For engineers using several coding agents, Permit Map resolves the rules each repository will apply.</p>
         <div class="primary-row"><a id="demo-cta" class="ticket primary" href="/?demo=1" data-link>Try it with sample data <span aria-hidden="true">→</span></a><p>Opens the isolated sample map in this browser.</p></div>
         <ul class="plain-facts"><li>Reads known policy files only.</li><li>Runs without an account.</li><li>Free under the MIT license.</li></ul>
@@ -84,14 +83,14 @@ function home(): string {
       </div>
     </section>
     <section class="preview-section" aria-labelledby="preview-title"><div class="shell preview-grid">
-      <div><p class="eyebrow light">Resolved policy · line 02</p><h2 id="preview-title">The sample table shows every decision</h2><p>See each sample rule’s decision, status, and source file.</p><a class="text-link" href="/?demo=1" data-link>Open the full sample map →</a></div>
+      <div><h2 id="preview-title">The sample table shows every decision</h2><p>See each sample rule’s decision, status, and source file.</p><a class="text-link" href="/?demo=1" data-link>Open the full sample map →</a></div>
       ${terminalPreview()}
     </div></section>
-    <section class="steps shell" aria-labelledby="steps-title"><p class="eyebrow">Working timetable · line 03</p><h2 id="steps-title">Inspect a repository in three steps</h2>
-      <ol><li><span>01</span><div><h3>Point at a repository</h3><p>Permit Map checks documented Claude Code and Codex policy paths.</p></div></li><li><span>02</span><div><h3>Check the decision context</h3><p>Claude denies win. Codex project rules need the trust context.</p></div></li><li><span>03</span><div><h3>Share the result</h3><p>Print a table or write JSON and Markdown for review.</p></div></li></ol>
+    <section class="steps shell" aria-labelledby="steps-title"><h2 id="steps-title">Inspect a repository in three steps</h2>
+      <ol><li><span>01</span><div><h3>Point at a repository</h3><p>Permit Map checks documented Claude Code and Codex policy paths.</p></div></li><li><span>02</span><div><h3>Check the decision context</h3><p>Claude deny rules take precedence. Codex project rules need the trust context.</p></div></li><li><span>03</span><div><h3>Share the result</h3><p>Print a table or write JSON and Markdown for review.</p></div></li></ol>
     </section>
-    <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><p class="eyebrow light">Depart from your terminal</p><h2 id="install-title" tabindex="-1">Install the single binary</h2><p>Clone the <a href="https://github.com/B-Divyesh/sf-agent-permission-map" rel="external">source repository <span class="sr-only">(external)</span></a>, then build with a current Rust toolchain.</p></div><div class="command"><code>git clone https://github.com/B-Divyesh/sf-agent-permission-map.git && cd sf-agent-permission-map && cargo install --path .</code><button type="button" data-copy="git clone https://github.com/B-Divyesh/sf-agent-permission-map.git &amp;&amp; cd sf-agent-permission-map &amp;&amp; cargo install --path .">Copy command</button></div></div></section>
-    <section class="limits shell" aria-labelledby="limits-title"><div><p class="eyebrow">Clear boundaries · line 04</p><h2 id="limits-title">What Permit Map does not do</h2></div><ul><li>It does not run an agent.</li><li>It does not change vendor settings.</li><li>It does not read source files or credential stores.</li><li>It does not guess when vendor patterns overlap.</li></ul></section>
+    <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><h2 id="install-title" tabindex="-1">Install the single binary</h2><p>Clone the <a href="https://github.com/B-Divyesh/sf-agent-permission-map" rel="external">source repository <span class="sr-only">(external)</span></a>, then build with a current Rust toolchain.</p></div><div class="command"><code>git clone https://github.com/B-Divyesh/sf-agent-permission-map.git && cd sf-agent-permission-map && cargo install --path .</code><button type="button" data-copy="git clone https://github.com/B-Divyesh/sf-agent-permission-map.git &amp;&amp; cd sf-agent-permission-map &amp;&amp; cargo install --path .">Copy command</button></div></div></section>
+    <section class="limits shell" aria-labelledby="limits-title"><div><h2 id="limits-title">What Permit Map does not do</h2></div><ul><li>It does not run an agent.</li><li>It does not change vendor settings.</li><li>It does not read source files or credential stores.</li><li>It does not guess when vendor patterns overlap.</li></ul></section>
   </main>${footer()}`;
 }
 
@@ -113,7 +112,7 @@ function firstScreenRules(): string {
 
 function demo(): string {
   return `${header()}<aside class="demo-banner" aria-label="Demo mode"><div class="shell"><p><strong>Demo — sample data, nothing is saved</strong></p><div><button type="button" id="reset-demo">Reset demo</button><a href="/#install" data-link>View install command</a></div></div></aside>
-  <main id="main"><section class="demo-head shell"><div><p class="eyebrow">Bundled sample · isolated preview</p><h1 tabindex="-1">Review the resolved permission map</h1><p>The sample combines Claude Code and Codex policies from four files.</p></div><div class="demo-summary" aria-label="Report summary"><div><strong>4</strong><span>sources</span></div><div><strong>9</strong><span>effective</span></div><div><strong>1</strong><span>shadowed</span></div></div>${firstScreenRules()}</section>
+  <main id="main"><section class="demo-head shell"><div><h1 tabindex="-1">Review the resolved permission map</h1><p>The sample combines Claude Code and Codex policies from four files.</p></div><div class="demo-summary" aria-label="Report summary"><div><strong>4</strong><span>sources</span></div><div><strong>9</strong><span>effective</span></div><div><strong>1</strong><span>shadowed</span></div></div>${firstScreenRules()}</section>
   <section class="report shell" aria-labelledby="rules-title"><div class="report-heading"><div><h2 id="rules-title">Resolved rules</h2><p id="demo-status" aria-live="polite">Claude denies win across scopes. This sample marks its Codex project as trusted.</p></div><a class="ticket secondary" href="/terminal-demo.svg" download>Download terminal recording</a></div>${rulesTable()}</section>
   <section class="adapter-notes shell" aria-labelledby="notes-title"><h2 id="notes-title">Adapter notes</h2><ul><li>Claude evaluates exact matches as deny, then ask, then allow across scopes.</li><li>Codex reads system, user, selected profile, and trusted project layers. Unknown trust stays unresolved.</li><li>Pattern overlap stays visible because vendor meanings can differ.</li></ul></section>
   </main>${footer()}`;
@@ -121,7 +120,7 @@ function demo(): string {
 
 function policyPage(kind: "privacy" | "terms"): string {
   const privacy = kind === "privacy";
-  const title = privacy ? "Privacy without a data trail" : "Use Permit Map on your terms";
+  const title = privacy ? "How Permit Map handles data" : "Terms for using Permit Map";
   return `${header()}<main id="main"><article class="legal shell"><p class="eyebrow">${privacy ? "Privacy notice" : "Terms of use"} · 28 August 2026</p><h1 tabindex="-1">${title}</h1>${privacy ? `
     <p>Permit Map is a local command-line tool. It has no account, telemetry, analytics, or network client.</p>
     <h2>Files it opens</h2><p>The CLI opens documented Claude Code and Codex policy paths. It reads permission fields and ignores unrelated settings.</p>
@@ -134,7 +133,7 @@ function policyPage(kind: "privacy" | "terms"): string {
 }
 
 function notFound(): string {
-  return `${header()}<main id="main"><section class="not-found shell"><div class="signal-mark" aria-hidden="true"><span></span></div><p class="eyebrow">Route not found · 404</p><h1 tabindex="-1">This permission line ends here</h1><p>The address does not match a Permit Map page.</p><a class="ticket primary" href="/" data-link>Return to the map</a></section></main>${footer()}`;
+  return `${header()}<main id="main"><section class="not-found shell"><div class="signal-mark" aria-hidden="true"><span></span></div><h1 tabindex="-1">This page was not found</h1><p>The address does not match a Permit Map page.</p><a class="ticket primary" href="/" data-link>Return to Permit Map</a></section></main>${footer()}`;
 }
 
 function escapeHtml(value: string): string {

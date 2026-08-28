@@ -341,6 +341,10 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
             .into(),
     );
     notes.push(
+        "CLI flags that Permit Map cannot observe remain a report limitation. Supply supported values with --codex-config."
+            .into(),
+    );
+    notes.push(
         "Codex command rules resolve forbidden, then prompt, then allow for an exact command prefix; controls resolve system, user, selected profile, then trusted project files; CLI overrides are highest.".into(),
     );
     match options.codex_trust {
@@ -1098,10 +1102,12 @@ fn display_path(path: &Path, root: &Path) -> String {
 
 pub fn render_table(report: &Report) -> String {
     if report.sources.is_empty() {
-        return format!(
+        let mut out = format!(
             "No policy files found in {}.\nAdd .claude/settings.json or .codex/config.toml, then run Permit Map again.\n",
             report.root
         );
+        append_table_notes(&mut out, &report.notes);
+        return out;
     }
     let mut out = format!(
         "Permit Map — {} source(s), {} effective, {} shadowed, {} unresolved\n\n",
@@ -1127,7 +1133,19 @@ pub fn render_table(report: &Report) -> String {
     if report.rules.is_empty() {
         out.push_str("No supported permission rules found in these files.\n");
     }
+    append_table_notes(&mut out, &report.notes);
     out
+}
+
+fn append_table_notes(out: &mut String, notes: &[String]) {
+    out.push_str("\nADAPTER NOTES\n");
+    out.push_str(&"─".repeat(76));
+    out.push('\n');
+    for note in notes {
+        out.push_str("- ");
+        out.push_str(note);
+        out.push('\n');
+    }
 }
 
 pub fn render_markdown(report: &Report) -> String {
@@ -1142,6 +1160,7 @@ pub fn render_markdown(report: &Report) -> String {
     ));
     if report.sources.is_empty() {
         out.push_str("No policy files found. Add `.claude/settings.json` or `.codex/config.toml`, then run Permit Map again.\n");
+        append_markdown_notes(&mut out, &report.notes);
         return out;
     }
     out.push_str(
@@ -1161,11 +1180,15 @@ pub fn render_markdown(report: &Report) -> String {
     if report.rules.is_empty() {
         out.push_str("\nNo supported permission rules were found in these files.\n");
     }
+    append_markdown_notes(&mut out, &report.notes);
+    out
+}
+
+fn append_markdown_notes(out: &mut String, notes: &[String]) {
     out.push_str("\n## Adapter notes\n\n");
-    for note in &report.notes {
+    for note in notes {
         out.push_str(&format!("- {note}\n"));
     }
-    out
 }
 
 fn escape_md(value: &str) -> String {

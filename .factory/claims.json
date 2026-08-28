@@ -36,10 +36,17 @@
   },
   {
     "id": "policy-files",
-    "claim": "Permit Map reads known policy paths instead of scanning repository and credential files.",
+    "claim": "Permit Map opens known policy paths only; it does not open repository or credential decoys.",
     "where": "landing facts, privacy page, and README",
     "test": "npm test -- --grep @claim:policy-files",
-    "sandbox": "temporary repository containing a policy file, a decoy .env, and an unrelated JSON file"
+    "sandbox": "Linux temporary repository; an LD_PRELOAD syscall tracer records the compiled binary opening one known policy and never opening .env, source, credential, unrelated JSON, or undocumented config.local.toml decoys"
+  },
+  {
+    "id": "no-secret-storage",
+    "claim": "Permit Map does not store secrets.",
+    "where": "README",
+    "test": "npm test -- --grep @claim:no-secret-storage",
+    "sandbox": "temporary repository and HOME with a unique secret-shaped .env decoy; inspect to a requested report and assert the secret is absent from output, report, and product-state directory"
   },
   {
     "id": "no-account",
@@ -124,6 +131,13 @@
     "where": "README resolution rules and landing boundaries",
     "test": "npm test -- --grep @claim:vendor-boundaries",
     "sandbox": "temporary repository with Claude patterns and a Codex command rule"
+  },
+  {
+    "id": "report-limitations",
+    "claim": "Every terminal, JSON, and Markdown report states overlap and unobserved CLI-context limitations.",
+    "where": "README resolution rules",
+    "test": "npm test -- --grep @claim:report-limitations",
+    "sandbox": "temporary repository with overlapping Claude matchers; assert the overlap and CLI-context limitation in table, JSON, and Markdown reports"
   },
   {
     "id": "touch-targets",

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, copyFileSync, linkSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, linkSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -69,24 +69,69 @@ test("successful inspections exit with status 0", { tag: "@claim:success-exit" }
   expect(report.rules.length).toBeGreaterThan(0);
 });
 
-test("CLI limits automatic discovery to documented policy paths", { tag: "@claim:policy-files" }, () => {
+test("CLI opens only documented policy paths", { tag: "@claim:policy-files" }, () => {
+  expect(process.platform, "the syscall-level policy access proof runs on the Linux release target").toBe("linux");
   const root = mkdtempSync(join(tmpdir(), "permit-map-claim-"));
   try {
     mkdirSync(join(root, ".claude"));
-    writeFileSync(join(root, ".claude", "settings.json"), '{"permissions":{"allow":["Read(src/**)"]}}');
-    writeFileSync(join(root, ".env"), "DECOY_SECRET=never-report-this");
-    writeFileSync(join(root, "other-policy.json"), '{"permissions":{"deny":["Bash(*)"]}}');
+    const knownPolicy = join(root, ".claude", "settings.json");
+    const environmentDecoy = join(root, ".env");
+    const unrelatedJson = join(root, "other-policy.json");
+    const sourceDecoy = join(root, "src", "credential.ts");
+    const credentialDecoy = join(root, ".aws", "credentials");
+    writeFileSync(knownPolicy, '{"permissions":{"allow":["Read(src/**)"]}}');
+    writeFileSync(environmentDecoy, "DECOY_SECRET=never-report-this");
+    writeFileSync(unrelatedJson, '{"permissions":{"deny":["Bash(*)"]}}');
+    mkdirSync(join(root, "src"));
+    mkdirSync(join(root, ".aws"));
+    writeFileSync(sourceDecoy, "export const token = 'never-open-source-decoy';");
+    writeFileSync(credentialDecoy, "[default]\naws_secret_access_key = never-open-credential-decoy\n");
     mkdirSync(join(root, ".codex"));
-    writeFileSync(join(root, ".codex", "config.local.toml"), 'sandbox_mode = "danger-full-access"');
-    const output = execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--format", "json"], { encoding: "utf8" });
-    const report = JSON.parse(output);
+    const undocumentedCodex = join(root, ".codex", "config.local.toml");
+    writeFileSync(undocumentedCodex, 'sandbox_mode = "danger-full-access"');
+    const trace = join(root, "opened-paths.log");
+    const shim = join(root, "permit-map-open-trace.so");
+    const binary = resolve(process.cwd(), process.platform === "win32" ? "target/debug/permit-map.exe" : "target/debug/permit-map");
+    execFileSync("cc", ["-shared", "-fPIC", "site-tests/open-trace.c", "-o", shim], { encoding: "utf8" });
+    const result = spawnSync(binary, ["inspect", root, "--no-global", "--format", "json"], {
+      encoding: "utf8",
+      env: { ...process.env, LD_PRELOAD: shim, PERMIT_MAP_OPEN_LOG: trace },
+    });
+    expect(result.status).toBe(0);
+    const report = JSON.parse(result.stdout);
+    const opened = readFileSync(trace, "utf8").split("\n").filter(Boolean);
     expect(report.counts.sources).toBe(1);
-    expect(output).toContain("Read(src/**)");
-    expect(output).not.toContain("DECOY_SECRET");
-    expect(output).not.toContain("Bash(*)");
-    expect(output).not.toContain("danger-full-access");
+    expect(result.stdout).toContain("Read(src/**)");
+    expect(opened).toContain(knownPolicy);
+    for (const decoy of [environmentDecoy, unrelatedJson, sourceDecoy, credentialDecoy, undocumentedCodex]) {
+      expect(opened, `${decoy} must never be opened by Permit Map`).not.toContain(decoy);
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI does not persist a secret-shaped decoy", { tag: "@claim:no-secret-storage" }, () => {
+  const root = mkdtempSync(join(tmpdir(), "permit-map-secret-"));
+  const home = mkdtempSync(join(tmpdir(), "permit-map-secret-home-"));
+  try {
+    mkdirSync(join(root, ".claude"));
+    writeFileSync(join(root, ".claude", "settings.json"), '{"permissions":{"allow":["Read(src/**)"]}}');
+    const secret = "sbk_permit_map_secret_9d3b50e0";
+    writeFileSync(join(root, ".env"), `PERMIT_MAP_TOKEN=${secret}\n`);
+    const reportPath = join(root, "report.json");
+    const binary = resolve(process.cwd(), process.platform === "win32" ? "target/debug/permit-map.exe" : "target/debug/permit-map");
+    const result = spawnSync(binary, ["inspect", root, "--no-global", "--format", "json", "--output", reportPath], {
+      encoding: "utf8",
+      env: { ...process.env, HOME: home },
+    });
+    expect(result.status).toBe(0);
+    expect(`${result.stdout}${result.stderr}`).not.toContain(secret);
+    expect(readFileSync(reportPath, "utf8")).not.toContain(secret);
+    expect(readdirSync(home)).toEqual([]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
   }
 });
 
@@ -367,6 +412,38 @@ test("different vendors remain separate and overlapping patterns remain visible"
     const report = JSON.parse(execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--codex-trust", "trusted", "--format", "json"], { encoding: "utf8" }));
     expect(report.rules.filter((rule: { vendor: string; status: string }) => rule.vendor === "claude" && rule.status === "effective")).toHaveLength(2);
     expect(report.rules.find((rule: { vendor: string; target: string }) => rule.vendor === "codex" && rule.target === "command:git")).toMatchObject({ status: "effective" });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("every report format states unsupported overlap and CLI-context limits", { tag: "@claim:report-limitations" }, () => {
+  const root = mkdtempSync(join(tmpdir(), "permit-map-limitations-"));
+  try {
+    mkdirSync(join(root, ".claude"));
+    writeFileSync(join(root, ".claude", "settings.json"), '{"permissions":{"deny":["Bash(git:*)","Bash(git push:*)"]}}');
+    const overlap = "Pattern overlap is vendor-specific; Permit Map lists it but does not infer overlap.";
+    const context = "CLI flags that Permit Map cannot observe remain a report limitation. Supply supported values with --codex-config.";
+    const run = (...args: string[]) => execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", ...args], { encoding: "utf8" });
+    const table = run("--format", "table");
+    const markdown = run("--format", "markdown");
+    const json = JSON.parse(run("--format", "json"));
+    for (const report of [table, markdown]) {
+      expect(report).toContain(overlap);
+      expect(report).toContain(context);
+    }
+    expect(json.notes).toContain(overlap);
+    expect(json.notes).toContain(context);
+
+    const empty = mkdtempSync(join(tmpdir(), "permit-map-empty-limitations-"));
+    try {
+      const emptyRun = (...args: string[]) => execFileSync("cargo", ["run", "--quiet", "--", "inspect", empty, "--no-global", ...args], { encoding: "utf8" });
+      expect(emptyRun("--format", "table")).toContain(context);
+      expect(emptyRun("--format", "markdown")).toContain(context);
+      expect(JSON.parse(emptyRun("--format", "json")).notes).toContain(context);
+    } finally {
+      rmSync(empty, { recursive: true, force: true });
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

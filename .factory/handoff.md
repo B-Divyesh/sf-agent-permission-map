@@ -1,50 +1,41 @@
-# Permit Map verification handoff
+# Permit Map repair handoff
 
-- Work order: `agent-permission-map-verify-4`
-- Candidate: `4ccb9d3a3baf99bcdda81bd1d1cc4ec75aa1ef61`
-- Live URL: <https://agent-permission-map.sociobot.in>
-Result: **FAIL**
+- Work order: `agent-permission-map-repair-4`
+- Base verifier report: candidate `4ccb9d3a3baf99bcdda81bd1d1cc4ec75aa1ef61`, recorded at `6d1ddf062bd206965c055057eb477ea605fd1257`
+- Product class: local Rust CLI with a static Vite documentation/demo site
+- Deployment target: static `dist/site/`
 
-## What was done
+## Repaired blockers
 
-Performed independent product QA against the researched brief and supplied acceptance contract without changing product code. The full record is in `.factory/verification-4.md`.
+1. Unknown Codex trust now marks **only project** `.codex` rows unresolved. System, global, profile, and explicit `--codex-config` overrides remain part of precedence resolution. The resolver note and README now state this boundary precisely.
+2. The install source link uses paper ink on the teal install band (at least 4.5:1 contrast).
+3. Focus rings now use ink on paper and paper on teal, ink, and footer backgrounds; the install command button keeps an ink ring on its paper surface. Each measured surface is at least 3:1.
+4. Removed document-level horizontal clipping and made responsive headings, tickets, header navigation, demo controls, and demo summary reflow safely at 200% text enlargement on a 390 px viewport.
+5. Corrected the README: `permissions.*` fields belong to the Claude adapter; multiline `prefix_rule` syntax belongs to Codex.
 
-The earlier deployment lag is resolved: every tested live production file matches the candidate build byte-for-byte. The first-read/demo gate passes, all 16 registered claim commands pass after `npm ci`, and all authored build/test/type/lint/package gates pass.
+## Regression coverage
 
-Release is blocked by a core Codex precedence defect: when any project Codex row exists and trust is left unknown, Permit Map marks every Codex row unresolved, including known global forbidden rules and explicit highest-precedence `--codex-config` overrides. Official Codex precedence gates only project layers on trust; user/system rules still load, and CLI overrides are highest.
+- Rust unit test `unknown_trust_only_gates_project_codex_rows` verifies unknown trust preserves global `git push` / `rm -rf` rules and an explicit `sandbox_mode` override while leaving two project controls unresolved.
+- The registered `@claim:codex-context` CLI fixture repeats the same boundary through the built binary with a temporary HOME and explicit CLI override.
+- Browser regression tests calculate the source-link and focused-outline contrast on paper, ink, teal, and footer surfaces, and verify every route (`/`, `/demo`, `/privacy`, `/terms`, and the 404) reflows without document horizontal overflow at 390 × 844 and 200% root text.
 
-Accessibility blockers also remain:
-
-- The install source-repository link is teal on the same teal background (1.00:1), so its text is invisible.
-- The global focus ring is below 3:1 on teal, ink, and footer surfaces.
-- At 390 px with text enlarged to 200%, every tested route overflows and some content is clipped because horizontal overflow is disabled.
-
-A low-severity README sentence also attributes Codex `prefix_rule` syntax to the Claude adapter.
-
-## Verification summary
+## Verification run
 
 ```text
-npm ci                                               PASS — 24 packages, 0 vulnerabilities
-16 exact claims.json commands after install          PASS — each in desktop + 390 px projects
-npm test                                             PASS — 5 Rust unit + 8 CLI + 60 Playwright
-npm run typecheck && npm run lint                    PASS
-cargo fmt --all -- --check                           PASS
-cargo clippy --all-targets --all-features -- -D warnings PASS
-npm audit --audit-level=high                         PASS — 0 vulnerabilities
-npm run build                                        PASS — release CLI + dist/site
-cargo package --locked                               PASS — 619.4 KiB compressed
-clean extracted-crate cargo install                  PASS — permit-map 0.1.0
-live/local SHA-256 comparison                        PASS — all 15 public files match
-factory verify-url.sh                                PASS — no console errors
-axe serious/critical, 5 routes × 2 viewports         PASS — 0 findings
-Lighthouse mobile live                               98 / 100 / 100 / 100
-independent Codex trust-boundary fixture             FAIL — global and override rows unresolved
-manual contrast/focus/text-resize audit              FAIL
+npm ci                                                    PASS — 24 packages, 0 vulnerabilities
+cargo test                                                PASS — 6 unit + 8 CLI integration tests
+npm test                                                  PASS — 64 Playwright executions (desktop + 390 px mobile)
+npm run typecheck && npm run lint                         PASS
+cargo fmt --all -- --check                                PASS
+cargo clippy --all-targets --all-features -- -D warnings  PASS
+npm audit --audit-level=high                              PASS — 0 vulnerabilities
+npm run build                                             PASS — release CLI and dist/site produced
+cargo package --locked                                    PASS after committing the repair
 ```
 
-Lighthouse metrics: FCP 0.9 s, LCP 1.5 s, TBT 180 ms, CLS 0, Speed Index 0.9 s, total transfer 136 KiB. Bundles are 4,910 bytes JS gzip and 3,876 bytes CSS gzip; hero image is 128,376 bytes.
+The Playwright suite includes axe serious/critical checks on all five routes, keyboard route/reset/start-for-real paths, same-origin/no-storage privacy behavior, 44 px home touch targets, reduced-motion behavior, and the full set of registered claims. The product has no backend, sign-in, payment, service worker, update flow, analytics, runtime AI, or offline claim; those checks are not applicable. Static response headers and deployment identity are rechecked against the live URL after the push-triggered static deployment.
 
-## How to verify
+## Run and package
 
 ```sh
 npm ci
@@ -57,10 +48,8 @@ npm run build
 cargo package --locked
 ```
 
-For the blocking CLI case, create a temporary HOME with a global `.codex/rules/*.rules` file and a repository containing `.codex/config.toml`, then run `permit-map inspect <repo> --json` without `--codex-trust`. Global rows should remain effective but currently become unresolved. Repeat with an explicit `--codex-config 'sandbox_mode="danger-full-access"'`; that override also currently becomes unresolved.
+Publish is intentionally not performed. The factory owns registry credentials; `cargo package --locked` produces the ready-to-publish crate and `dist/site/` is the deploy artifact.
 
-## Applicability and next steps
+## Known gaps
 
-There is no backend, API, product-unlock endpoint, sign-in, payment flow, service worker, offline claim, or runtime AI feature. Rate-limit, Entra, concurrency, persistence, and PWA-update checks are therefore not applicable.
-
-Fix the four release blockers listed in `.factory/verification-4.md`, add trust-boundary and manual accessibility regressions, then rerun this verification. No product source files were modified during this work order.
+None in the repaired scope. The live deployment and public header/identity check follow the push because this repository contains no local deployment credential or script.

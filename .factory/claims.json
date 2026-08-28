@@ -57,7 +57,7 @@
   },
   {
     "id": "codex-context",
-    "claim": "Codex project policy stays unresolved until its trust context is supplied; trusted nested project files override parent project files.",
+    "claim": "Only Codex project policy stays unresolved until its trust context is supplied; global rules and supplied CLI overrides still resolve.",
     "where": "landing steps, demo notes, reports, and README",
     "test": "npm test -- --grep @claim:codex-context",
     "sandbox": "temporary Git-like repository with root and nested .codex/config.toml files"

@@ -114,7 +114,7 @@ test("Claude resolves deny before allow across scopes", { tag: "@claim:resolutio
   }
 });
 
-test("Codex project policy is unresolved without trust and layered when trusted", { tag: "@claim:codex-context" }, () => {
+test("Only Codex project policy is unresolved without trust and layered when trusted", { tag: "@claim:codex-context" }, () => {
   const root = mkdtempSync(join(tmpdir(), "permit-map-codex-"));
   try {
     mkdirSync(join(root, ".git"));
@@ -128,6 +128,25 @@ test("Codex project policy is unresolved without trust and layered when trusted"
     expect(unresolved.rules.every((rule: { status: string }) => rule.status === "unresolved")).toBeTruthy();
     const trusted = run("--codex-trust", "trusted");
     expect(trusted.rules.find((rule: { status: string }) => rule.status === "effective")).toMatchObject({ layer: "project", target: "sandbox:read-only" });
+
+    const home = mkdtempSync(join(tmpdir(), "permit-map-codex-home-"));
+    try {
+      mkdirSync(join(home, ".codex/rules"), { recursive: true });
+      writeFileSync(join(home, ".codex/rules", "global.rules"), 'prefix_rule(pattern = ["git", "push"], decision = "prompt")\nprefix_rule(pattern = ["rm", "-rf"], decision = "forbidden")');
+      const binary = resolve(process.cwd(), process.platform === "win32" ? "target/debug/permit-map.exe" : "target/debug/permit-map");
+      const boundary = JSON.parse(execFileSync(binary, ["inspect", join(root, "services/api"), "--format", "json", "--codex-config", 'sandbox_mode="danger-full-access"'], {
+        encoding: "utf8",
+        env: { ...process.env, HOME: home },
+      }));
+      expect(boundary.counts).toMatchObject({ effective: 3, unresolved: 2 });
+      expect(boundary.rules.find((rule: { target: string; layer: string }) => rule.target === "command:git push" && rule.layer === "global")).toMatchObject({ status: "effective", effect: "ask" });
+      expect(boundary.rules.find((rule: { target: string; layer: string }) => rule.target === "command:rm -rf" && rule.layer === "global")).toMatchObject({ status: "effective", effect: "deny" });
+      expect(boundary.rules.find((rule: { target: string; layer: string }) => rule.target === "sandbox:danger-full-access" && rule.layer === "override")).toMatchObject({ status: "effective" });
+      expect(boundary.rules.filter((rule: { layer: string }) => rule.layer === "project")).toHaveLength(2);
+      expect(boundary.rules.filter((rule: { layer: string }) => rule.layer === "project").every((rule: { status: string }) => rule.status === "unresolved")).toBeTruthy();
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

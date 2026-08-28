@@ -4,6 +4,22 @@ import { existsSync, readFileSync } from "node:fs";
 
 const routes = ["/", "/demo", "/privacy", "/terms", "/missing-route"];
 
+function parseRgb(value: string): [number, number, number] {
+  const match = value.match(/\d+(?:\.\d+)?/g);
+  if (!match || match.length < 3) throw new Error(`Expected an RGB color, got ${value}`);
+  return [Number(match[0]), Number(match[1]), Number(match[2])];
+}
+
+function contrastRatio(first: string, second: string): number {
+  const luminance = (color: [number, number, number]) => color.reduce((sum, component, index) => {
+    const channel = component / 255;
+    const linear = channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    return sum + linear * [0.2126, 0.7152, 0.0722][index];
+  }, 0);
+  const [one, two] = [luminance(parseRgb(first)), luminance(parseRgb(second))].sort((a, b) => b - a);
+  return (one + 0.05) / (two + 0.05);
+}
+
 for (const route of routes) {
   test(`${route} has a semantic page and no serious accessibility findings`, async ({ page }) => {
     await page.goto(route);
@@ -73,6 +89,49 @@ test("390px layout stays inside the viewport", async ({ page }) => {
     await page.goto(route);
     const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(hasOverflow, `${route} should not overflow`).toBeFalsy();
+  }
+});
+
+test("install link and focus rings retain required contrast on every surface", async ({ page }) => {
+  await page.goto("/");
+  const installColors = await page.locator(".install-grid p a").evaluate(node => ({
+    foreground: getComputedStyle(node).color,
+    background: getComputedStyle(node.closest(".install-band")!).backgroundColor,
+  }));
+  expect(contrastRatio(installColors.foreground, installColors.background)).toBeGreaterThanOrEqual(4.5);
+
+  for (const [target, surface] of [
+    [".site-header nav a", ".site-header"],
+    [".preview-section .text-link", ".preview-section"],
+    [".install-grid p a", ".install-band"],
+    ["footer a", "footer"],
+  ]) {
+    const colors = await page.locator(target).first().evaluate((node, surfaceSelector) => {
+      (node as HTMLElement).focus();
+      return {
+        outline: getComputedStyle(node).outlineColor,
+        background: getComputedStyle(document.querySelector(surfaceSelector!)!).backgroundColor,
+      };
+    }, surface);
+    expect(contrastRatio(colors.outline, colors.background), `${target} focus ring`).toBeGreaterThanOrEqual(3);
+  }
+});
+
+test("200% text enlargement reflows every route without clipping", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const route of routes) {
+    await page.goto(route);
+    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+    const dimensions = await page.evaluate(() => {
+      window.scrollTo(1000, 0);
+      return {
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollX: window.scrollX,
+      };
+    });
+    expect(dimensions.scrollWidth, `${route} should reflow at 200% text`).toBeLessThanOrEqual(dimensions.clientWidth);
+    expect(dimensions.scrollX, `${route} should not need horizontal recovery`).toBe(0);
   }
 });
 

@@ -345,8 +345,11 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
                 .iter()
                 .any(|rule| rule.vendor == "codex" && rule.layer == Layer::Project) =>
         {
-            notes.push("Codex project trust is unknown. Codex rows are unresolved; rerun with --codex-trust trusted or --codex-trust untrusted.".into());
-            for rule in raw.iter_mut().filter(|rule| rule.vendor == "codex") {
+            notes.push("Codex project trust is unknown. Project .codex rows are unresolved; user, system, profile, and supplied CLI override rows remain resolved. Rerun with --codex-trust trusted or --codex-trust untrusted to resolve project rows.".into());
+            for rule in raw
+                .iter_mut()
+                .filter(|rule| rule.vendor == "codex" && rule.layer == Layer::Project)
+            {
                 rule.unresolved = true;
             }
         }
@@ -1292,6 +1295,65 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(home).unwrap();
         fs::remove_file(system).unwrap();
+    }
+
+    #[test]
+    fn unknown_trust_only_gates_project_codex_rows() {
+        let root = temp_root();
+        let home = temp_root();
+        fs::create_dir_all(root.join(".codex")).unwrap();
+        fs::create_dir_all(home.join(".codex/rules")).unwrap();
+        fs::write(
+            root.join(".codex/config.toml"),
+            "sandbox_mode = \"workspace-write\"\napproval_policy = \"on-request\"\n",
+        )
+        .unwrap();
+        fs::write(
+            home.join(".codex/rules/global.rules"),
+            "prefix_rule(pattern = [\"git\", \"push\"], decision = \"prompt\")\nprefix_rule(pattern = [\"rm\", \"-rf\"], decision = \"forbidden\")\n",
+        )
+        .unwrap();
+
+        let report = inspect_with_options(
+            &root,
+            InspectOptions {
+                include_global: true,
+                codex_trust: CodexTrust::Unknown,
+                codex_overrides: vec!["sandbox_mode=\"danger-full-access\"".into()],
+                codex_home: Some(home.clone()),
+                codex_system_config: Some(root.join("missing-system-config.toml")),
+                ..InspectOptions::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(report.counts.effective, 3);
+        assert_eq!(report.counts.unresolved, 2);
+        assert!(report.rules.iter().any(|rule| {
+            rule.layer == Layer::Global
+                && rule.target == "command:git push"
+                && rule.status == RuleStatus::Effective
+        }));
+        assert!(report.rules.iter().any(|rule| {
+            rule.layer == Layer::Global
+                && rule.target == "command:rm -rf"
+                && rule.status == RuleStatus::Effective
+        }));
+        assert!(report.rules.iter().any(|rule| {
+            rule.layer == Layer::Override
+                && rule.target == "sandbox:danger-full-access"
+                && rule.status == RuleStatus::Effective
+        }));
+        assert!(
+            report
+                .rules
+                .iter()
+                .filter(|rule| rule.layer == Layer::Project)
+                .all(|rule| { rule.status == RuleStatus::Unresolved })
+        );
+
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(home).unwrap();
     }
 
     #[test]

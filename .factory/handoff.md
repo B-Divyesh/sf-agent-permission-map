@@ -63,8 +63,8 @@ Run the CLI demo with `cargo run -- demo --format json`. Build the static deploy
 
 ## Deployment
 
-The static deployment is triggered by pushing `main`. Push/live verification is recorded after the deployment completes.
+The static deployment is triggered by pushing `main`. `f3d70d0` was pushed to `origin/main` successfully. Immediately after the push, repeated HTTPS checks still returned the prior live asset hashes (`main-wfWOK7eh.js`, `style-Bnx-GhNB.css`) rather than this build's `main-C0zeLAHu.js` and `style-YOvF9uGK.css`; the factory static-deployment propagation is pending. The prior live route still returns HTTPS 200 with the expected static security headers. Recheck the hashes after propagation before calling the public rollout complete.
 
 ## Known gaps
 
-No product gaps are known. The standalone axe CLI ChromeDriver launch is an environment-tool compatibility issue; the repository's Playwright axe integration is passing and is the accessibility gate used by `npm test`.
+No product gaps are known. The standalone axe CLI ChromeDriver launch is an environment-tool compatibility issue; the repository's Playwright axe integration is passing and is the accessibility gate used by `npm test`. Public CDN deployment propagation was still pending at handoff time.

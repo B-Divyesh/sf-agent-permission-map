@@ -1,0 +1,21 @@
+{
+  "name": "permit-map-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev:site",
+    "dev:site": "vite --config vite.config.ts",
+    "build": "cargo build --release && npm run build:site",
+    "build:site": "vite build --config vite.config.ts",
+    "test": "cargo test && npm run build:site && playwright test",
+    "test:site": "playwright test",
+    "preview": "vite preview --config vite.config.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "typescript": "5.9.3",
+    "vite": "7.3.6"
+  }
+}

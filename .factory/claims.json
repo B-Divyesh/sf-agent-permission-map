@@ -1,0 +1,51 @@
+[
+  {
+    "id": "demo-resolves",
+    "claim": "The bundled sample resolves four policy files into nine effective rules and one shadowed rule.",
+    "where": "landing preview and demo summary",
+    "test": "npm test -- --grep @claim:demo-resolves",
+    "sandbox": "fresh browser context at /demo using bundled sample data"
+  },
+  {
+    "id": "report-formats",
+    "claim": "Permit Map prints terminal, JSON, and Markdown reports.",
+    "where": "landing how-it-works section and README",
+    "test": "npm test -- --grep @claim:report-formats",
+    "sandbox": "bundled examples/sample-repo in a clean local process"
+  },
+  {
+    "id": "policy-files",
+    "claim": "Permit Map reads known policy paths instead of scanning repository and credential files.",
+    "where": "landing facts, privacy page, and README",
+    "test": "npm test -- --grep @claim:policy-files",
+    "sandbox": "temporary repository containing a policy file, a decoy .env, and an unrelated JSON file"
+  },
+  {
+    "id": "no-account",
+    "claim": "The demo and CLI run without an account.",
+    "where": "landing facts and privacy page",
+    "test": "npm test -- --grep @claim:no-account",
+    "sandbox": "fresh browser context with no cookies or saved state"
+  },
+  {
+    "id": "mit-license",
+    "claim": "Permit Map is free under the MIT license.",
+    "where": "landing facts, terms page, and README",
+    "test": "npm test -- --grep @claim:mit-license",
+    "sandbox": "clean repository checkout; inspect LICENSE and Cargo package metadata"
+  },
+  {
+    "id": "browser-privacy",
+    "claim": "The website sets no cookies, stores no browser data, and makes no cross-origin demo requests.",
+    "where": "demo banner and privacy page",
+    "test": "npm test -- --grep @claim:browser-privacy",
+    "sandbox": "fresh browser context; capture every request and inspect browser storage after reset"
+  },
+  {
+    "id": "cli-local",
+    "claim": "The CLI has no network or telemetry client.",
+    "where": "privacy page and README",
+    "test": "npm test -- --grep @claim:cli-local",
+    "sandbox": "clean repository checkout; inspect runtime dependencies and Rust source for network clients"
+  }
+]

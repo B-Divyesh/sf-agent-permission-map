@@ -1,55 +1,62 @@
-# Permit Map repair handoff
+# Permit Map independent verification handoff
 
-Repair work order: `agent-permission-map-repair-1`  
-Base candidate: `085268444f0e1acfa78db96606d5e1343271809f`  
-Primary repair commit: `e46d89784d3f38c793bb925431b4f6ab8322d04c`
+**Result: FAIL**
 
-## Completed repairs
+- Work order: `agent-permission-map-verify-2`
+- Candidate: `bf224e9b2d846899aa3491c091fa170ee7f1a5e2`
+- Live URL: <https://agent-permission-map.sociobot.in>
+- Verified: 28 August 2026 UTC
+- Full report: [.factory/verification-2.md](verification-2.md)
 
-- Claude now resolves an exact matcher by vendor order across every discovered scope: deny, then ask, then allow. A repo deny can no longer become a worktree allow.
-- Codex now models the documented system, user, selected profile, and project-root-to-working-directory layers. Project rows remain `unresolved` until `--codex-trust trusted` or `--codex-trust untrusted` is supplied; `--codex-profile` and repeatable `--codex-config key=value` record invocation context. The undocumented `config.local.toml` layer was removed.
-- `--output` refuses any discovered or known Claude/Codex vendor policy filename. `--json` is now a scripting shorthand for `--format json`.
-- Registered the missing safety, isolation, exit-code, vendor-boundary, Codex-context, and 390 px touch-target claims. The corrected Claude claim has a reverse-scope deny regression fixture.
-- Raised the full-sample link and all footer links to a measured 44 px minimum target at 390 px.
-- Added strict TypeScript checking (`npm run typecheck`) and a lint gate (`npm run lint`), including the required Node typings.
-- Replaced the non-versioned WebP immutable cache policy with one-day caching. The static build now emits real Demo, Privacy, Terms, and 404 documents; `staticwebapp.config.json` rewrites known routes and serves the designed 404 with HTTP 404.
+The live deployment is healthy and byte-matches the candidate, the cold first screen and one-click sample pass, and all repository/build/package/browser quality gates are green. The release still fails because the CLI can report a Codex `allow` when Codex applies `forbidden`, drops documented Codex rule syntax, and violates registered error, overwrite-safety, and demo-isolation claims on valid boundary cases.
 
-## Verification evidence
+## Release blockers
 
-Run after a clean `npm ci`:
+1. **Critical:** identical Codex `forbidden` and `allow` prefix rules are resolved to effective `allow`; `codex execpolicy check` and official OpenAI documentation resolve `forbidden`.
+2. **High:** official multiline rules are omitted, union patterns are flattened incorrectly, default-allow rules are omitted, and malformed `.rules` exit 0.
+3. **High:** writing through a hard-link alias overwrites a discovered vendor policy despite the refusal claim.
+4. **High:** `demo --output report.md` writes into the caller directory and then says nothing outside the temporary directory changed.
+5. **Medium:** `/demo` → `/#install` navigation scrolls correctly but leaves keyboard focus on `<body>`.
+
+## Verification summary
+
+From a separate clean Git clone at the candidate:
 
 ```text
-npm run lint                                      PASS
-npm test                                          PASS — 4 Rust unit + 5 CLI integration + 48 Playwright cases
-cargo fmt --check                                 PASS
+npm ci                                             PASS — 24 packages, 0 vulnerabilities
+npm test                                           PASS — 4 unit + 5 CLI + 48 Playwright
+npm run typecheck                                  PASS
+npm run lint                                       PASS
+cargo fmt --all -- --check                         PASS
 cargo clippy --all-targets --all-features -- -D warnings  PASS
-npm audit --audit-level=high                      PASS — 0 vulnerabilities
-npm run build                                     PASS — target/release/permit-map and dist/site/
-cargo package --locked --allow-dirty              PASS — 46 files, 607.5 KiB compressed
-clean-prefix cargo install + permit-map demo --json PASS — 9 effective, 1 shadowed
+npm audit --audit-level=high                       PASS — 0 vulnerabilities
+npm run build                                      PASS — release binary + dist/site
+cargo package --locked                             PASS — 46 files, 608.1 KiB compressed
+clean-prefix install + installed demo --json       PASS — 4 sources, 9 effective, 1 shadowed
 ```
 
-The full browser suite ran against desktop Chromium and a 390 × 844 touch viewport. It includes keyboard demo/reset operation, route-focus restoration, serious/critical axe scans on `/`, `/demo`, `/privacy`, `/terms`, and the missing-route view, browser privacy checks, reduced-motion coverage from the existing suite, and the 44 px link measurement.
+All 14 exact `.factory/claims.json` commands passed and each has exactly one tag. Independent cases disprove `cli-errors`, `vendor-policy-safe`, and `demo-isolated`, so the claims gate fails on truthfulness/coverage despite green scripts.
 
-All 14 declared claims in `.factory/claims.json` ran through `npm test`; each has exactly one tagged regression test. The safety test proves that an attempted Markdown report at `.claude/settings.json` exits 2 and leaves the JSON policy byte-for-byte unchanged.
+The factory URL checker passed in 608 ms. Live axe scans found no serious/critical issue across home, demo, privacy, terms, and 404 at desktop and 390 px. Lighthouse scored 97/100/100/100 with LCP 1.5 s, TBT 190 ms, and CLS 0. JS is 4.79 KiB gzip, CSS 3.85 KiB gzip, and the hero is 128,376 bytes. Headers, caching, first-read copy, one-click demo, same-origin privacy, touch targets, reduced motion, keyboard basics, and responsive layout pass.
 
-Local Lighthouse on the production build (`127.0.0.1:4173`, headless Chromium) recorded: Performance **100**, Accessibility **100**, Best Practices **100**, SEO **100**; LCP **1.7 s**, CLS **0**. Produced assets: JS **4.76 KiB gzip**, CSS **3.85 KiB gzip**, poster **128,376 bytes**.
+## Reproduce the decisive failure
 
-## Run and deploy
+Create a trusted project `.codex/rules/default.rules` containing:
+
+```python
+prefix_rule(pattern = ["git", "push"], decision = "forbidden")
+prefix_rule(pattern = ["git", "push"], decision = "allow")
+```
+
+Then compare:
 
 ```sh
-npm ci
-npm test
-npm run lint
-npm run build
-cargo install --path .
-permit-map inspect . --codex-trust trusted
+permit-map inspect . --no-global --codex-trust trusted --json
+codex execpolicy check --pretty --rules .codex/rules/default.rules git push origin main
 ```
 
-Deployment class remains static. Deploy `dist/site/`; `main` was pushed at `d3a5d56` as the configured factory deployment trigger. No credentials, analytics, or external runtime services are required.
+Permit Map selects allow; Codex selects forbidden.
 
-## Known limits
+## Next steps
 
-- Codex CLI flags and project trust cannot be discovered from policy files alone. Permit Map marks affected project rows unresolved until the caller supplies the trust setting and any relevant `--codex-config` values. This is intentional fail-safe behavior, not an inferred effective policy.
-- Offline reload and server-side identity checks are not applicable: this is a local CLI with a static documentation/demo site and makes no offline claim or backend/API request.
-- The live edge still returned the prior candidate (`Last-Modified: 11:22:38 UTC`) after the push and two delayed checks through 12:38 UTC. The committed `dist/site/` artifact is ready; the remaining edge update is owned by the external factory deployment trigger.
+Implement a real Codex rules parser and most-restrictive matching, harden report output against filesystem aliases, reconcile demo `--output` with its sandbox claim, expand the claim fixtures, and fix focus for hash-bearing route changes. Re-run this complete verification after those changes. No product source was modified during this verification.

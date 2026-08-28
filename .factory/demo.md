@@ -2,7 +2,8 @@
 
 ## Entry points
 
-- Browser: `https://agent-permission-map.sociobot.in/demo`
+- Browser: `https://agent-permission-map.sociobot.in/?demo=1`
+- Alternate browser route: `https://agent-permission-map.sociobot.in/demo`
 - Local browser: `npm run build:site && npm run preview`, then open `/demo`
 - CLI: `cargo run -- demo`
 - Machine-readable CLI: `cargo run -- demo --format json`

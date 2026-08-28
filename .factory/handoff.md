@@ -53,3 +53,22 @@ An adversarial first-read review was completed without changing product code. Th
 - Result: **FAIL**. The mobile demo does not show any sample rule in its first viewport (F-1-1, blocking). Three README sentences exceed the 22-word limit and three browser/report promises are not registered claims (F-1-2 through F-1-7).
 
 Read .factory/review-1.md for evidence and re-run its full checklist after repairs.
+
+---
+
+## Polish round 1 — 28 August 2026 UTC
+
+This repair closes F-1-1 through F-1-7 from `.factory/review-1.md`.
+
+- The browser CTA now uses the canonical isolated `/?demo=1` entry, with the banner, reset/start controls, summary, and three legible sample rows above the fold at 390 × 844. The evidence screenshot is `.factory/evidence/f-1-1-mobile-demo.png`.
+- The demo has route-specific title, metadata, canonical URL, social metadata, history/focus behavior, a real `/demo` alternate route, and the existing `/privacy`, `/terms`, and designed 404 routing remains covered.
+- Added claims `demo-entry`, `demo-rule-provenance`, and `site-no-third-parties`. There are now 19 claims, each mapped to exactly one tagged Playwright test.
+- Rewrote the reviewed README sentences and the landing CTA/preview wording. `.factory/copy-audit.md` records the current short copy. `.factory/catalog-description.txt` is the verb-first catalog sentence.
+
+Local repair evidence before deployment:
+
+- `npm test`: pass — 6 Rust unit tests, 8 Rust integration tests, and 78 Playwright desktop/mobile executions.
+- `npm run typecheck`, `npm run lint`, `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `npm audit --audit-level=high`, and `npm run build`: pass.
+- `cargo package --locked` must run after this repair is committed because Cargo correctly refuses to package a dirty worktree.
+
+The static deploy artifact remains `dist/site/`; the release binary remains `target/release/permit-map`. No known product gaps remain locally. The post-push cold live check and clean-clone claim gate are recorded below once the repair commit is deployed.

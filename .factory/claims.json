@@ -7,6 +7,20 @@
     "sandbox": "fresh browser context at /demo using bundled sample data"
   },
   {
+    "id": "demo-entry",
+    "claim": "One click opens an isolated sample with its banner, summary, and real rules visible on a 390 × 844 screen.",
+    "where": "landing primary action",
+    "test": "npm test -- --grep @claim:demo-entry",
+    "sandbox": "fresh 390 × 844 browser context; click the landing action and inspect the first viewport"
+  },
+  {
+    "id": "demo-rule-provenance",
+    "claim": "The sample table shows every sample rule's decision, status, matcher, and source file.",
+    "where": "landing preview and demo table",
+    "test": "npm test -- --grep @claim:demo-rule-provenance",
+    "sandbox": "fresh browser demo compared field-for-field with permit-map demo --format json"
+  },
+  {
     "id": "report-formats",
     "claim": "Permit Map prints terminal, JSON, and Markdown reports.",
     "where": "landing how-it-works section and README",
@@ -40,6 +54,13 @@
     "where": "demo banner and privacy page",
     "test": "npm test -- --grep @claim:browser-privacy",
     "sandbox": "fresh browser context; capture every request and inspect browser storage after reset"
+  },
+  {
+    "id": "site-no-third-parties",
+    "claim": "The site has no runtime third-party scripts, fonts, analytics, API calls, cookies, browser storage, or service worker.",
+    "where": "README",
+    "test": "npm test -- --grep @claim:site-no-third-parties",
+    "sandbox": "fresh browser context; visit every public route and inspect all requests, cookies, storage, IndexedDB, and service workers"
   },
   {
     "id": "cli-local",

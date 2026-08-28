@@ -34,7 +34,7 @@ const wordmark = `
 function header(): string {
   return `<header class="site-header"><div class="shell header-inner">${wordmark}
     <nav aria-label="Main navigation">
-      <a href="/demo" data-link>Demo</a><a href="/#install" data-link>Install</a><a href="/privacy" data-link>Privacy</a>
+      <a href="/?demo=1" data-link>Demo</a><a href="/#install" data-link>Install</a><a href="/privacy" data-link>Privacy</a>
     </nav></div></header>`;
 }
 
@@ -75,7 +75,7 @@ function home(): string {
         <p class="eyebrow">Local policy inspector · line 01</p>
         <h1 id="home-title" tabindex="-1">See agent permissions before they run</h1>
         <p class="lede">For engineers using several coding agents, Permit Map resolves the rules each repository will apply.</p>
-        <div class="primary-row"><a id="demo-cta" class="ticket primary" href="/demo" data-link>Try it with sample data <span aria-hidden="true">→</span></a><p>Opens a browser preview of the bundled repository.</p></div>
+        <div class="primary-row"><a id="demo-cta" class="ticket primary" href="/?demo=1" data-link>Try it with sample data <span aria-hidden="true">→</span></a><p>Opens the isolated sample map in this browser.</p></div>
         <ul class="plain-facts"><li>Reads known policy files only.</li><li>Runs without an account.</li><li>Free under the MIT license.</li></ul>
       </div>
       <div class="hero-art">
@@ -84,7 +84,7 @@ function home(): string {
       </div>
     </section>
     <section class="preview-section" aria-labelledby="preview-title"><div class="shell preview-grid">
-      <div><p class="eyebrow light">Resolved policy · line 02</p><h2 id="preview-title">One table shows every decision</h2><p>See what wins, what gets shadowed, and which file set each rule.</p><a class="text-link" href="/demo" data-link>Open the full sample map →</a></div>
+      <div><p class="eyebrow light">Resolved policy · line 02</p><h2 id="preview-title">The sample table shows every decision</h2><p>See each sample rule’s decision, status, and source file.</p><a class="text-link" href="/?demo=1" data-link>Open the full sample map →</a></div>
       ${terminalPreview()}
     </div></section>
     <section class="steps shell" aria-labelledby="steps-title"><p class="eyebrow">Working timetable · line 03</p><h2 id="steps-title">Inspect a repository in three steps</h2>
@@ -96,16 +96,24 @@ function home(): string {
 }
 
 function rulesTable(): string {
-  return `<div class="table-wrap" tabindex="0" aria-label="Resolved permission table, scroll horizontally for all columns"><table>
+  return `<div class="table-wrap" tabindex="0" aria-label="Resolved permission table, scroll horizontally for all columns"><table id="full-rule-table">
     <caption class="sr-only">Nine effective rules and one shadowed rule from the sample repository.</caption>
     <thead><tr><th scope="col">Vendor</th><th scope="col">Layer</th><th scope="col">Decision</th><th scope="col">Status</th><th scope="col">Matcher</th><th scope="col">Source</th></tr></thead>
     <tbody>${sampleRules.map(rule => `<tr class="${rule.status}"><td>${rule.vendor}</td><td>${rule.layer}</td><td><span class="decision ${rule.effect}">${rule.effect}</span></td><td>${rule.status}</td><td><code>${escapeHtml(rule.target)}</code></td><td><code>${escapeHtml(rule.source)}</code></td></tr>`).join("")}</tbody>
   </table></div>`;
 }
 
+function firstScreenRules(): string {
+  return `<table class="first-screen-table">
+    <caption>First three resolved sample rules</caption>
+    <thead><tr><th scope="col"><span aria-hidden="true">Effect</span><span class="sr-only">Decision</span></th><th scope="col">Matcher</th><th scope="col">Source</th></tr></thead>
+    <tbody>${sampleRules.slice(0, 3).map(rule => `<tr><td><span class="decision ${rule.effect}">${rule.effect}</span></td><td><code>${escapeHtml(rule.target)}</code></td><td><code title="${escapeHtml(rule.source)}">${escapeHtml(rule.source.replace(/^.*\//, ""))}</code></td></tr>`).join("")}</tbody>
+  </table>`;
+}
+
 function demo(): string {
   return `${header()}<aside class="demo-banner" aria-label="Demo mode"><div class="shell"><p><strong>Demo — sample data, nothing is saved</strong></p><div><button type="button" id="reset-demo">Reset demo</button><a href="/#install" data-link>Start for real</a></div></div></aside>
-  <main id="main"><section class="demo-head shell"><div><p class="eyebrow">Bundled sample · isolated preview</p><h1 tabindex="-1">Review the resolved permission map</h1><p>The sample combines Claude Code and Codex policies from four files.</p></div><div class="demo-summary" aria-label="Report summary"><div><strong>4</strong><span>sources</span></div><div><strong>9</strong><span>effective</span></div><div><strong>1</strong><span>shadowed</span></div></div></section>
+  <main id="main"><section class="demo-head shell"><div><p class="eyebrow">Bundled sample · isolated preview</p><h1 tabindex="-1">Review the resolved permission map</h1><p>The sample combines Claude Code and Codex policies from four files.</p></div><div class="demo-summary" aria-label="Report summary"><div><strong>4</strong><span>sources</span></div><div><strong>9</strong><span>effective</span></div><div><strong>1</strong><span>shadowed</span></div></div>${firstScreenRules()}</section>
   <section class="report shell" aria-labelledby="rules-title"><div class="report-heading"><div><h2 id="rules-title">Resolved rules</h2><p id="demo-status" aria-live="polite">Claude denies win across scopes. This sample marks its Codex project as trusted.</p></div><a class="ticket secondary" href="/terminal-demo.svg" download>Download terminal recording</a></div>${rulesTable()}</section>
   <section class="adapter-notes shell" aria-labelledby="notes-title"><h2 id="notes-title">Adapter notes</h2><ul><li>Claude evaluates exact matches as deny, then ask, then allow across scopes.</li><li>Codex reads system, user, selected profile, and trusted project layers. Unknown trust stays unresolved.</li><li>Pattern overlap stays visible because vendor meanings can differ.</li></ul></section>
   </main>${footer()}`;
@@ -133,17 +141,42 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]!);
 }
 
+type PageMetadata = { title: string; description: string; canonical: string };
+
+function setMetadata(metadata: PageMetadata): void {
+  document.title = metadata.title;
+  document.querySelector<HTMLMetaElement>('meta[name="description"]')!.content = metadata.description;
+  document.querySelector<HTMLLinkElement>('link[rel="canonical"]')!.href = metadata.canonical;
+  for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) {
+    document.querySelector<HTMLMetaElement>(selector)!.content = metadata.title;
+  }
+  for (const selector of ['meta[property="og:description"]', 'meta[name="twitter:description"]']) {
+    document.querySelector<HTMLMetaElement>(selector)!.content = metadata.description;
+  }
+}
+
 function render(path = window.location.pathname): void {
   let content: string;
-  let title: string;
-  if (path === "/") { content = home(); title = "Permit Map — resolve coding-agent permissions"; }
-  else if (path === "/demo") { content = demo(); title = "Demo — Permit Map"; }
-  else if (path === "/privacy") { content = policyPage("privacy"); title = "Privacy — Permit Map"; }
-  else if (path === "/terms") { content = policyPage("terms"); title = "Terms — Permit Map"; }
-  else { content = notFound(); title = "Page not found — Permit Map"; }
+  let metadata: PageMetadata;
+  const queryDemo = path === "/" && new URLSearchParams(window.location.search).get("demo") === "1";
+  if (queryDemo || path === "/demo") {
+    content = demo();
+    metadata = { title: "Demo — Permit Map", description: "Review ten resolved rules from the isolated Permit Map sample.", canonical: "https://agent-permission-map.sociobot.in/?demo=1" };
+  } else if (path === "/") {
+    content = home();
+    metadata = { title: "Permit Map — resolve coding-agent permissions", description: "Resolve Claude Code and Codex permission files into one reviewable map before an agent runs.", canonical: "https://agent-permission-map.sociobot.in/" };
+  } else if (path === "/privacy") {
+    content = policyPage("privacy");
+    metadata = { title: "Privacy — Permit Map", description: "Read how Permit Map handles local policy files and browser data.", canonical: "https://agent-permission-map.sociobot.in/privacy" };
+  } else if (path === "/terms") {
+    content = policyPage("terms");
+    metadata = { title: "Terms — Permit Map", description: "Read the Permit Map terms of use.", canonical: "https://agent-permission-map.sociobot.in/terms" };
+  } else {
+    content = notFound();
+    metadata = { title: "Page not found — Permit Map", description: "Return to Permit Map from this missing page.", canonical: "https://agent-permission-map.sociobot.in/404" };
+  }
   app.innerHTML = content;
-  document.title = title;
-  document.querySelector<HTMLLinkElement>('link[rel="canonical"]')!.href = `https://agent-permission-map.sociobot.in${path === "/" ? "/" : path}`;
+  setMetadata(metadata);
   bindActions();
   routeStatus.textContent = document.querySelector("h1")?.textContent ?? "Page changed";
 }
@@ -151,7 +184,7 @@ function render(path = window.location.pathname): void {
 function navigate(url: URL): void {
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   history.replaceState({ scrollY: window.scrollY, focusId: active?.id || null }, "", window.location.href);
-  history.pushState({ scrollY: 0, focusId: null }, "", `${url.pathname}${url.hash}`);
+  history.pushState({ scrollY: 0, focusId: null }, "", `${url.pathname}${url.search}${url.hash}`);
   render(url.pathname);
   requestAnimationFrame(() => {
     if (url.hash) {

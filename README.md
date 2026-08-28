@@ -7,7 +7,7 @@ Permit Map is for engineers who use Claude Code or Codex across several reposito
 It does not run agents, scan source files, or store secrets. It refuses to write a report over a discovered vendor policy. Permit Map is free software under the [MIT license](LICENSE).
 
 Website: <https://agent-permission-map.sociobot.in>  
-One-click sample: <https://agent-permission-map.sociobot.in/demo>
+One-click sample: <https://agent-permission-map.sociobot.in/?demo=1>
 
 ## Try the sandbox
 
@@ -79,8 +79,8 @@ The Claude adapter reads `permissions.allow`, `permissions.ask`, and `permission
 Permit Map uses vendor-specific, explicit rules:
 
 1. Claude exact matches resolve deny, then ask, then allow across every discovered scope.
-2. Codex command rules resolve exact prefixes as forbidden, then prompt, then allow. Codex sandbox and approval controls resolve system, user, selected profile, and trusted project files from the root to the inspected directory; the closest control wins.
-3. Only Codex project rows stay `unresolved` until you state `--codex-trust trusted` or `--codex-trust untrusted`; system, user, profile, and supplied CLI override rows still resolve.
+2. Codex command rules resolve exact prefixes as forbidden, then prompt, then allow. Codex controls use system, user, profile, and trusted project files. The closest file to the inspected directory wins.
+3. Codex project rows stay `unresolved` until you set `--codex-trust`. System, user, profile, and supplied CLI overrides still resolve. Accepted values are `trusted` and `untrusted`.
 4. Pass `--codex-profile NAME` and repeat `--codex-config key=value` for context supplied to the Codex invocation.
 5. Different vendors never shadow one another.
 
@@ -100,7 +100,7 @@ npm run lint
 npm run build
 ```
 
-`npm test` runs Rust tests, builds the site, checks every product claim, tests keyboard paths at desktop and 390 px, and runs axe checks. `npm run build` creates the release binary under `target/release/permit-map` and the static site under `dist/site/`.
+`npm test` runs Rust and browser tests and checks every product claim. It also checks keyboard paths and axe findings at desktop and 390 px. `npm run build` creates the release binary under `target/release/permit-map` and the static site under `dist/site/`.
 
 Run the site locally:
 

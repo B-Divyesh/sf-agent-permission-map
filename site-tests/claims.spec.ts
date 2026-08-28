@@ -5,14 +5,47 @@ import { linkSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-test("sample browser rows exactly match the bundled CLI report", { tag: "@claim:demo-resolves" }, async ({ page }) => {
+test("sample browser summary matches the bundled CLI report", { tag: "@claim:demo-resolves" }, async ({ page }) => {
   await page.goto("/demo");
   await expect(page.getByText("Demo — sample data, nothing is saved")).toBeVisible();
   await expect(page.getByLabel("Report summary")).toContainText("4sources9effective1shadowed");
-  await expect(page.locator("tr.shadowed")).toHaveCount(1);
-  await expect(page.locator("tr.shadowed")).toContainText("Bash(git status:*)");
   const cli = JSON.parse(execFileSync("cargo", ["run", "--quiet", "--", "demo", "--format", "json"], { encoding: "utf8" }));
-  const browserRows = await page.locator("tbody tr").evaluateAll(rows => rows.map(row => {
+  expect(cli.counts).toMatchObject({ sources: 4, effective: 9, shadowed: 1 });
+  await expect(page.locator("#full-rule-table tbody tr")).toHaveCount(10);
+  await expect(page.locator("#full-rule-table tr.shadowed")).toHaveCount(1);
+});
+
+test("landing action opens the isolated sample with real rows in the phone viewport", { tag: "@claim:demo-entry" }, async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("link", { name: /Try it with sample data/ }).click();
+  await expect(page).toHaveURL(/\/?\?demo=1$/);
+  await expect(page.getByText("Demo — sample data, nothing is saved")).toBeVisible();
+  await expect(page.getByLabel("Report summary")).toContainText("4sources9effective1shadowed");
+  const rows = page.locator(".first-screen-table tbody tr");
+  await expect(rows).toHaveCount(3);
+  const expectedRows = [
+    ["deny", "Bash(git status:*)", "settings.local.json"],
+    ["allow", "Bash(npm test:*)", "settings.json"],
+    ["deny", "Read(.env*)", "settings.local.json"],
+  ];
+  for (let index = 0; index < 3; index += 1) {
+    const row = rows.nth(index);
+    await expect(row.locator(".decision")).toBeVisible();
+    await expect(row.locator("td")).toHaveText(expectedRows[index]);
+    const box = await row.boundingBox();
+    expect((box?.y ?? 844) + (box?.height ?? 0), `sample row ${index + 1} should be above the fold`).toBeLessThanOrEqual(844);
+  }
+  const clippedCells = await page.locator(".first-screen-table td code").evaluateAll(cells => cells
+    .filter(cell => cell.scrollWidth > cell.clientWidth)
+    .map(cell => cell.textContent));
+  expect(clippedCells, "phone preview values should not be visually clipped").toEqual([]);
+});
+
+test("every browser rule exposes the CLI decision, status, matcher, and source", { tag: "@claim:demo-rule-provenance" }, async ({ page }) => {
+  await page.goto("/?demo=1");
+  const cli = JSON.parse(execFileSync("cargo", ["run", "--quiet", "--", "demo", "--format", "json"], { encoding: "utf8" }));
+  const browserRows = await page.locator("#full-rule-table tbody tr").evaluateAll(rows => rows.map(row => {
     const cells = [...row.querySelectorAll("td")].map(cell => cell.textContent?.trim() ?? "");
     return { vendor: cells[0], layer: cells[1], effect: cells[2], status: cells[3], target: cells[4], source: cells[5] };
   }));
@@ -71,6 +104,25 @@ test("browser demo makes no cross-origin requests or stored data", { tag: "@clai
   expect([...origins]).toEqual(["http://127.0.0.1:4173"]);
   expect(await context.cookies()).toEqual([]);
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+});
+
+test("every public route avoids third parties and browser persistence", { tag: "@claim:site-no-third-parties" }, async ({ page, context }) => {
+  const origins = new Set<string>();
+  page.on("request", request => origins.add(new URL(request.url()).origin));
+  for (const route of ["/", "/?demo=1", "/demo", "/privacy", "/terms", "/404/", "/missing-route"]) {
+    await page.goto(route);
+    await expect(page.locator("main")).toHaveCount(1);
+    const storage = await page.evaluate(async () => ({
+      local: localStorage.length,
+      session: sessionStorage.length,
+      indexedDb: (await indexedDB.databases()).length,
+      caches: (await caches.keys()).length,
+    }));
+    expect(storage, `${route} should not persist browser data`).toEqual({ local: 0, session: 0, indexedDb: 0, caches: 0 });
+  }
+  expect([...origins]).toEqual(["http://127.0.0.1:4173"]);
+  expect(await context.cookies()).toEqual([]);
+  expect(context.serviceWorkers()).toEqual([]);
 });
 
 test("CLI does not launch agents and has no network or telemetry client", { tag: "@claim:cli-local" }, () => {

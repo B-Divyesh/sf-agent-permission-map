@@ -38,7 +38,7 @@ for (const route of routes) {
 test("navigation uses real URLs and restores focus", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Try it with sample data/ }).click();
-  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveURL(/\/?\?demo=1$/);
   await expect(page.locator("h1")).toBeFocused();
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
@@ -51,10 +51,18 @@ test("keyboard can enter the demo and reset it", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Skip to main content" })).toBeFocused();
   await page.getByRole("link", { name: /Try it with sample data/ }).focus();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveURL(/\/?\?demo=1$/);
   await page.getByRole("button", { name: "Reset demo" }).focus();
   await page.keyboard.press("Space");
   await expect(page.getByText(/Sample reset/)).toBeVisible();
+});
+
+test("the in-memory demo resets after the browser goes offline", async ({ page, context }) => {
+  await page.goto("/?demo=1");
+  await context.setOffline(true);
+  await page.getByRole("button", { name: "Reset demo" }).click();
+  await expect(page.getByText(/Sample reset/)).toBeVisible();
+  await expect(page.locator("#full-rule-table tbody tr")).toHaveCount(10);
 });
 
 test("keyboard start-for-real moves focus to the install destination", async ({ page }) => {
@@ -145,6 +153,18 @@ test("first read fits the audience, sample action, and facts at 1366 by 768", as
   }
 });
 
+test("query demo has its own title, metadata, canonical URL, and focused heading", async ({ page }) => {
+  await page.goto("/?demo=1");
+  await expect(page).toHaveTitle("Demo — Permit Map");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", "Review ten resolved rules from the isolated Permit Map sample.");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Demo — Permit Map");
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute("content", "Demo — Permit Map");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://agent-permission-map.sociobot.in/?demo=1");
+  await page.goto("/");
+  await page.getByRole("link", { name: /Try it with sample data/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+});
+
 test("secondary routes include route-specific social metadata", async ({ page }) => {
   for (const route of ["/demo", "/privacy", "/terms", "/404/"]) {
     await page.goto(route);
@@ -164,4 +184,26 @@ test("production output has route documents and a 404 response override", () => 
   }
   const config = JSON.parse(readFileSync("dist/site/staticwebapp.config.json", "utf8"));
   expect(config.responseOverrides["404"]).toMatchObject({ rewrite: "/404/index.html", statusCode: 404 });
+});
+
+test("reviewed README sentences use the approved short wording", () => {
+  const readme = readFileSync("README.md", "utf8");
+  for (const sentence of [
+    "Codex controls use system, user, profile, and trusted project files.",
+    "Codex project rows stay `unresolved` until you set `--codex-trust`.",
+    "`npm test` runs Rust and browser tests and checks every product claim.",
+  ]) expect(readme).toContain(sentence);
+  expect(readme).not.toContain("the closest control wins");
+  expect(readme).not.toContain("Only Codex project rows stay");
+  expect(readme).not.toContain("checks every product claim, tests keyboard paths");
+});
+
+test("every registered claim has exactly one matching tagged test", () => {
+  const claims = JSON.parse(readFileSync(".factory/claims.json", "utf8")) as Array<{ id: string; test: string }>;
+  const tests = readFileSync("site-tests/claims.spec.ts", "utf8");
+  expect(new Set(claims.map(({ id }) => id)).size).toBe(claims.length);
+  for (const { id, test: command } of claims) {
+    expect(command).toBe(`npm test -- --grep @claim:${id}`);
+    expect(tests.match(new RegExp(`@claim:${id}(?![a-z0-9-])`, "g")) ?? [], id).toHaveLength(1);
+  }
 });

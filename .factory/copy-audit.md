@@ -10,7 +10,7 @@ Audited 28 August 2026. Counts treat hyphenated terms as one word. Interface lab
 | See agent permissions before they run | 6 | Pass |
 | For engineers using several coding agents, Permit Map resolves the rules each repository will apply. | 14 | Pass |
 | Try it with sample data | 6 | Pass |
-| Opens a browser preview of the bundled repository. | 8 | Pass |
+| Opens the isolated sample map in this browser. | 8 | Pass |
 | Reads known policy files only. | 5 | Pass |
 | Runs without an account. | 4 | Pass |
 | Free under the MIT license. | 5 | Pass |
@@ -22,8 +22,8 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 | Copy | Words | Result |
 |---|---:|---|
 | Resolved policy · line 02 | 5 | Pass |
-| One table shows every decision | 5 | Pass |
-| See what wins, what gets shadowed, and which file set each rule. | 12 | Pass |
+| The sample table shows every decision | 6 | Pass |
+| See each sample rule’s decision, status, and source file. | 9 | Pass |
 | Open the full sample map | 6 | Pass |
 | Working timetable · line 03 | 5 | Pass |
 | Inspect a repository in three steps | 6 | Pass |

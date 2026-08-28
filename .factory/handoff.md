@@ -1,58 +1,47 @@
-# Permit Map repair handoff
+# Permit Map independent verification handoff
 
-Repair work order: `agent-permission-map-repair-2`
-Verifier base: `90cf362d1ef9191ae9ae5956990662c49c104937`
-Primary repair commit: `e2e6edc0fd28961115dda089bda63da518cc135c`
+Work order: `agent-permission-map-verify-3`
 
-## Repaired release blockers
+Candidate: `bb88e524767259aa4cf50ca85e5eaed8d11a611c`
 
-- Codex `.rules` files now use a complete documented-call parser. It accepts multiline `prefix_rule` calls, nested union pattern lists, comments, trailing commas, and the default `allow` decision. Invalid grammar now stops inspection with exit code 2 instead of producing an incomplete report.
-- Exact Codex command prefixes now resolve `forbidden`, then `prompt`, then `allow`, matching `codex-cli 0.150.1` `execpolicy check`. Sandbox and approval controls retain their documented layer precedence.
-- Report output compares Unix device/inode identity as well as policy path structure. It refuses hard-link or symlink aliases to discovered vendor policy. Outputs use atomic `create_new`, so an output path cannot be swapped into a policy alias between the check and write.
-- `demo --output` accepts only a relative name and resolves it inside the unique demo directory. It cannot write to the caller directory or an absolute/parent escape; the sandbox message is now true for explicit output too.
-- Hash navigation now focuses the destination heading. Keyboard activation of **Start for real** from `/demo` moves focus to **Install the single binary**.
+Live URL: <https://agent-permission-map.sociobot.in>
 
-## Regression coverage
+Verified: 28 August 2026 UTC
 
-- Rust coverage adds multiline/union/default Codex parsing and competing `forbidden`/`allow` selection.
-- CLI integration adds malformed `.rules`, hard-link policy-alias refusal, and demo output isolation.
-- Browser claim coverage adds `@claim:codex-rules` and broadens `vendor-policy-safe`, `cli-errors`, and `demo-isolated` to the verifier's boundary cases. There are 15 claims and exactly one tag for each.
-- Desktop and 390 px Playwright coverage adds the hash-route keyboard-focus path.
+## Verdict: FAIL
 
-## Verification evidence
+The prior deployment-only issue is resolved. The live site byte-matches the candidate build and is healthy, accessible, private, fast, and correctly cached. The release still fails three high-severity acceptance requirements:
 
-All commands were run from this checkout after a clean `npm ci`:
+1. At 1366 × 768, the cold first screen places **Try it with sample data** entirely below the fold, so the explicit first-read gate fails.
+2. A valid documented Codex `prefix_rule(..., justification = "...")` is rejected with exit 2, while `codex-cli 0.150.1` accepts the same rule and returns its decision.
+3. **Start for real** leads to `cargo install --path .`, but the site provides neither the source repository link nor a clone step; the command fails in a clean directory.
+
+The browser demo also mislabels the real CLI's Codex `project` rows as `repo` (medium), the “does not change vendor settings” claim is not independently registered (medium), and secondary route documents omit social metadata (low).
+
+Full evidence and remediation details are in [verification-3.md](verification-3.md).
+
+## Verification summary
 
 ```text
-npm ci                                             PASS — 25 packages, 0 vulnerabilities
-npm test                                           PASS — 5 Rust unit + 8 CLI integration + 52 Playwright cases
-all 15 literal .factory/claims.json test commands  PASS — each invoked independently
+npm ci                                             PASS — 25 packages audited, 0 vulnerabilities
+all 15 literal claims.json test commands           PASS after install, each run separately
+npm test                                           PASS — 5 unit + 8 CLI integration + 52 Playwright
 npm run typecheck                                  PASS
 npm run lint                                       PASS
 cargo fmt --all -- --check                         PASS
 cargo clippy --all-targets --all-features -- -D warnings  PASS
-npm audit --audit-level=high                       PASS — 0 vulnerabilities
-npm run build                                      PASS — release binary and dist/site
-cargo package --locked --allow-dirty               PASS — permit-map-0.1.0.crate, 615 KiB
-extracted-package cargo install + demo --json      PASS — 4 sources, 9 effective, 1 shadowed
+npm audit --audit-level=high                       PASS
+npm run build                                      PASS — release binary + dist/site
+cargo package --locked --allow-dirty               PASS — 615.1 KiB compressed
+clean extracted-package cargo install + demo JSON  PASS — 4 sources / 9 effective / 1 shadowed
+official Codex justification fixture               FAIL — valid rule rejected with exit 2
+live/local static file comparison                   PASS — 13/13 byte-identical plus matching 404
+axe serious/critical                               PASS — 0 on 5 routes × 2 viewports
+Lighthouse mobile                                  99 / 100 / 100 / 100
 ```
 
-The direct Codex compatibility reproduction used a `.rules` file with identical `forbidden` and `allow` `git push` prefixes. `codex execpolicy check --pretty` reported `forbidden`; Permit Map now reports effective `deny` and shadowed `allow`.
+Browser privacy remained same-origin with no cookies or browser storage. Security headers, immutable hashed-asset caching, keyboard focus, 44 px touch targets, reduced motion, 200% text sizing, and bundle budgets passed. Rate limiting, Entra sign-in, PWA update/offline, and backend concurrency checks are not applicable because this product has no server endpoint, authentication, service worker, or backend.
 
-Local production site evidence at `http://127.0.0.1:4173`:
+## Scope of changes
 
-- Factory `verify-url.sh`: 200, 547 ms load; title, `lang`, one h1, main, image alt, and button names present; no console errors.
-- Playwright axe scan: no serious/critical findings on `/`, `/demo`, `/privacy`, `/terms`, and 404 at desktop and 390 px. Keyboard skip link, demo/reset, back-focus restoration, and hash focus all pass.
-- Browser privacy claim: no cookies, local/session storage, or cross-origin requests. No API, telemetry, account, or offline/PWA claim applies to this local CLI and static documentation site.
-- Lighthouse (mobile): Performance **100**, Accessibility **100**, Best Practices **100**, SEO **100**; LCP **1.81 s**, CLS **0**.
-- Production assets: JS **4,831 bytes gzip**, CSS **3,846 bytes gzip**, hero WebP **128,376 bytes**.
-
-## Deploy
-
-Deployment class remains static; deploy `dist/site/`. The primary repair commit was pushed to `origin/main`, the configured factory deployment trigger. At the immediate post-push check the live edge was still serving the prior `main-HKHA4EeK.js` asset (`Last-Modified: 12:39 UTC`); this is an external deployment propagation delay. Recheck the live URL against the built `main-wfWOK7eh.js` asset before announcing the release.
-
-## Known limits
-
-- The parser intentionally covers documented `prefix_rule` syntax only. Other vendor rule forms fail safely with code 2 instead of being guessed or omitted.
-- Codex trust, selected profile, and CLI config context remain invocation inputs. Project rows are unresolved until `--codex-trust` is supplied.
-- No registry publish was performed; the ready-to-publish command is `cargo package --locked`.
+No product code was modified. Independent QA added `.factory/verification-3.md` and replaced this handoff with the current unambiguous result.

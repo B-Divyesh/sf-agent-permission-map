@@ -8,8 +8,8 @@ Audited 28 August 2026. Counts treat hyphenated terms as one word. Interface lab
 |---|---:|---|
 | Local policy inspector · line 01 | 5 | Pass |
 | See agent permissions before they run | 6 | Pass |
-| For engineers using several coding agents, Permit Map resolves the rules each repository will apply. | 14 | Pass |
-| Try it with sample data | 6 | Pass |
+| For engineers using several coding agents, Permit Map resolves the rules each repository will apply. | 15 | Pass |
+| Try it with sample data | 5 | Pass |
 | Opens the isolated sample map in this browser. | 8 | Pass |
 | Reads known policy files only. | 5 | Pass |
 | Runs without an account. | 4 | Pass |
@@ -21,14 +21,14 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 
 | Copy | Words | Result |
 |---|---:|---|
-| Resolved policy · line 02 | 5 | Pass |
+| Resolved policy · line 02 | 4 | Pass |
 | The sample table shows every decision | 6 | Pass |
 | See each sample rule’s decision, status, and source file. | 9 | Pass |
-| Open the full sample map | 6 | Pass |
-| Working timetable · line 03 | 5 | Pass |
+| Open the full sample map | 5 | Pass |
+| Working timetable · line 03 | 4 | Pass |
 | Inspect a repository in three steps | 6 | Pass |
 | Point at a repository | 4 | Pass |
-| Permit Map checks documented Claude Code and Codex policy paths. | 9 | Pass |
+| Permit Map checks documented Claude Code and Codex policy paths. | 10 | Pass |
 | Check the decision context | 4 | Pass |
 | Claude denies win. Codex project rules need the trust context. | 10 | Pass |
 | Share the result | 3 | Pass |
@@ -37,7 +37,7 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 | Install the single binary | 4 | Pass |
 | Clone the source repository, then build with a current Rust toolchain. | 11 | Pass |
 | Copy command | 2 | Pass |
-| Clear boundaries · line 04 | 5 | Pass |
+| Clear boundaries · line 04 | 4 | Pass |
 | What Permit Map does not do | 6 | Pass |
 | It does not run an agent. | 6 | Pass |
 | It does not change vendor settings. | 6 | Pass |
@@ -49,7 +49,7 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 
 | Copy | Words | Result |
 |---|---:|---|
-| Demo — sample data, nothing is saved | 7 | Pass |
+| Demo — sample data, nothing is saved | 6 | Pass |
 | Reset demo | 2 | Pass |
 | View install command | 3 | Pass |
 | Check this page and the project changelog for changes. | 9 | Pass |
@@ -64,7 +64,7 @@ The error claim covers every listed input class. Its test asserts the cause, exi
 
 ## Catalog description
 
-“Resolve coding-agent permissions before an agent runs.” — 7 words, 55 characters, starts with a verb.
+“Resolve coding-agent permissions before an agent runs.” — 7 words, 54 characters, starts with a verb.
 
 ## Terminology
 

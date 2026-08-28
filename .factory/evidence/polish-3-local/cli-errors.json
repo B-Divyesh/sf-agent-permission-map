@@ -1,0 +1,27 @@
+[
+  {
+    "name": "missing path",
+    "status": 2,
+    "stderr": "Permit Map could not finish: /tmp/permit-map-evidence-missing-nf3H5P/missing does not exist. Choose a repository directory and try again."
+  },
+  {
+    "name": "malformed Claude JSON",
+    "status": 2,
+    "stderr": "Permit Map could not finish: Cannot parse /tmp/permit-map-evidence-malformed-VMIWCS/.claude/settings.json as Claude settings JSON: expected ident at line 1 column 2. Fix the JSON syntax, then run Permit Map again."
+  },
+  {
+    "name": "malformed Codex TOML",
+    "status": 2,
+    "stderr": "Permit Map could not finish: Cannot parse /tmp/permit-map-evidence-malformed-1l27CT/.codex/config.toml as Codex TOML: TOML parse error at line 1, column 32\n  |\n1 | sandbox_mode = \"workspace-write\n  |                                ^\ninvalid basic string, expected `\"`\n. Fix the TOML syntax, then run Permit Map again."
+  },
+  {
+    "name": "malformed Codex rules",
+    "status": 2,
+    "stderr": "Permit Map could not finish: Cannot parse /tmp/permit-map-evidence-malformed-2rZkPH/.codex/rules/default.rules as Codex rules: line 1: expected ',' or ')'. Fix the rules syntax, then run Permit Map again."
+  },
+  {
+    "name": "unreadable policy as nobody",
+    "status": 2,
+    "stderr": "Permit Map could not finish: Cannot read /tmp/permit-map-evidence-unreadable-h5OmNW/.claude/settings.json: Permission denied (os error 13). Check that your account can read the file, then try again."
+  }
+]

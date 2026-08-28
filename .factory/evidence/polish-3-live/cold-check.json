@@ -1,0 +1,148 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "status": 200,
+      "expectedTitle": "Permit Map — resolve coding-agent permissions",
+      "expectedCanonical": "https://agent-permission-map.sociobot.in/",
+      "title": "Permit Map — resolve coding-agent permissions",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "canonical": "https://agent-permission-map.sociobot.in/",
+      "description": "Resolve Claude Code and Codex permission files into one reviewable map before an agent runs.",
+      "privacy": true,
+      "terms": true,
+      "seriousOrCriticalAxe": 0
+    },
+    {
+      "path": "/?demo=1",
+      "status": 200,
+      "expectedTitle": "Demo — Permit Map",
+      "expectedCanonical": "https://agent-permission-map.sociobot.in/?demo=1",
+      "title": "Demo — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "canonical": "https://agent-permission-map.sociobot.in/?demo=1",
+      "description": "Review ten resolved rules from the isolated Permit Map sample.",
+      "privacy": true,
+      "terms": true,
+      "seriousOrCriticalAxe": 0
+    },
+    {
+      "path": "/demo",
+      "status": 200,
+      "expectedTitle": "Demo — Permit Map",
+      "expectedCanonical": "https://agent-permission-map.sociobot.in/?demo=1",
+      "title": "Demo — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "canonical": "https://agent-permission-map.sociobot.in/?demo=1",
+      "description": "Review ten resolved rules from the isolated Permit Map sample.",
+      "privacy": true,
+      "terms": true,
+      "seriousOrCriticalAxe": 0
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "expectedTitle": "Privacy — Permit Map",
+      "expectedCanonical": "https://agent-permission-map.sociobot.in/privacy",
+      "title": "Privacy — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "canonical": "https://agent-permission-map.sociobot.in/privacy",
+      "description": "Read how Permit Map handles local policy files and browser data.",
+      "privacy": true,
+      "terms": true,
+      "seriousOrCriticalAxe": 0
+    },
+    {
+      "path": "/terms",
+      "status": 200,
+      "expectedTitle": "Terms — Permit Map",
+      "expectedCanonical": "https://agent-permission-map.sociobot.in/terms",
+      "title": "Terms — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "canonical": "https://agent-permission-map.sociobot.in/terms",
+      "description": "Read the Permit Map terms of use.",
+      "privacy": true,
+      "terms": true,
+      "seriousOrCriticalAxe": 0
+    },
+    {
+      "path": "/404",
+      "status": 200,
+      "expectedTitle": "Page not found — Permit Map",
+      "expectedCanonical": "https://agent-permission-map.sociobot.in/404",
+      "title": "Page not found — Permit Map",
+      "lang": "en",
+      "h1": 1,
+      "main": 1,
+      "canonical": "https://agent-permission-map.sociobot.in/404",
+      "description": "Return to Permit Map from this missing page.",
+      "privacy": true,
+      "terms": true,
+      "seriousOrCriticalAxe": 0
+    }
+  ],
+  "mobileDemo": {
+    "url": "https://agent-permission-map.sociobot.in/#install",
+    "banner": "Demo — sample data, nothing is saved",
+    "summary": "4sources9effective1shadowed",
+    "rowData": [
+      {
+        "text": "denyBash(git status:*)settings.local.json",
+        "bottom": 465
+      },
+      {
+        "text": "allowBash(npm test:*)settings.json",
+        "bottom": 489
+      },
+      {
+        "text": "denyRead(.env*)settings.local.json",
+        "bottom": 514
+      }
+    ],
+    "headingFocused": true,
+    "reset": "Sample reset. Claude denies win across scopes; the sample Codex project is trusted.",
+    "storageAfterReset": {
+      "local": {
+        "real:sentinel": "keep-local"
+      },
+      "session": {
+        "real:session": "keep-session"
+      },
+      "cookie": "real_sentinel=keep-cookie"
+    },
+    "installFocused": true
+  },
+  "privacy": {
+    "origins": [
+      "https://agent-permission-map.sociobot.in"
+    ],
+    "cookies": [],
+    "storage": {
+      "local": 0,
+      "session": 0,
+      "indexedDb": 0,
+      "caches": 0
+    },
+    "serviceWorkers": 0,
+    "normalErrors": []
+  },
+  "errors": [],
+  "missingRoute": {
+    "status": 404,
+    "title": "Page not found — Permit Map",
+    "h1": 1,
+    "main": 1,
+    "returnLink": "/"
+  },
+  "failures": []
+}

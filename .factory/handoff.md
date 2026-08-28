@@ -1,34 +1,49 @@
-# Permit Map adversarial review 3 handoff
+# Permit Map polish round 3 handoff
 
-**Verdict: FAIL — one minor finding remains.**
+**Verdict: PASS — zero findings remain.**
 
-## What was done
+## What changed
 
-- Completed the required cold first-read review on the live site at 390 × 844 and 1366 × 768.
-- Audited every landing-page and README sentence, plus headings and action labels.
-- Exercised the one-click browser demo, offline Reset, real-storage sentinels, request log, and CLI demo isolation.
-- Ran every literal command in all 20 claim entries from a separate clean clone at `7e39808e`.
-- Rechecked every finding from review rounds 1 and 2 against live behavior and repository source/tests.
-- Crawled live routes and links; checked titles, metadata, 404 behavior, focus/history, shared structure, visual identity, and axe results.
-- Wrote `.factory/review-3.md`. No product code was changed.
+- Closed F-3-1 with the stronger behavior instead of narrowing the README promise.
+- Added actionable recovery guidance for unreadable policies and malformed Claude JSON, Codex TOML, and Codex rules.
+- Expanded `cli-errors` so its claim, sandbox, and tagged test match the documented behavior exactly.
+- The unreadable-file test copies the real binary into an isolated temporary repository, runs it as UID/GID 65534 against a mode-`000` policy, and asserts exit `2`, `Permission denied`, and the recovery step.
+- Rechecked every F-1-* and F-2-* fix. First-screen wording, `/?demo=1`, reset/isolation, claims, routing, titles, metadata, focus, 404, legal links, mobile layout, and the transit-poster identity remain correct.
+- Updated the catalog description to “Resolve coding-agent permissions before an agent runs.”
+- Recorded the complete finding map in [.factory/polish-3.md](polish-3.md).
 
-## Result
+## How to verify
 
-F-3-1 remains: README promises exit-2 handling for unreadable files and “an actionable error,” but `cli-errors` registers and tests only missing and malformed inputs. An independent unreadable-file run returned 2, while the unreadable and malformed messages did not consistently provide a next action.
+```sh
+npm ci
+npm test
+npm run typecheck
+npm run lint
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+npm audit --audit-level=high
+npm run build
+cargo package --locked
+```
 
-## Verification
+Run each exact command listed in [.factory/claims.json](claims.json). The canonical browser sample is <https://agent-permission-map.sociobot.in/?demo=1>; the CLI sample is `cargo run -- demo --format json`.
 
-Clean clone: `/tmp/permit-map-review3.vLV5EJ/repo`, commit `7e39808efd94e6f857e8570badd18ecf4e9a3c34`.
+## Exact verification record
 
-- All 20 exact claim commands: pass.
-- `npm test`: pass — 82 Playwright, 6 Rust unit, and 8 Rust integration tests.
-- `npm run typecheck`, `npm run lint`, `npm run build`: pass.
-- Live axe at desktop and 390 px on home, canonical demo, `/demo`, `/privacy`, `/terms`, and a missing route: zero violations.
-- Live URL verifier on home and canonical demo: pass, no console errors.
-- Live crawl: all intended links returned 200; an intentional missing path returned the designed 404.
-- Live demo: same-origin requests only; Reset works offline; no demo-created cookies, browser storage, IndexedDB, Cache Storage, or service worker.
-- CLI demo: 4 sources, 9 effective, 1 shadowed, 10 rows; caller sentinel unchanged.
+- Functional repair commit: `e27805b`; pushed to `origin/main`.
+- Clean clone: `/tmp/permit-map-polish3.TATxkL/repo`.
+- All 20 claim commands passed independently.
+- Full suite: 82 Playwright runs, 6 Rust unit tests, and 8 Rust integration tests passed.
+- Typecheck, lint, Rust formatting, Clippy with warnings denied, high-severity npm audit, release build, and locked Cargo package verification passed.
+- Build: 15.40 KB JavaScript / 5.25 KB gzip; 14.40 KB CSS / 4.19 KB gzip. Outputs are `dist/site/` and `target/release/permit-map`.
+- Local standalone axe: 0 violations. Local mobile Lighthouse: 100 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 0.942 s, CLS 0, TBT 27 ms.
+- Azure Static Web Apps deployment `c3244741-f00c-4c7d-9ae1-d2abdf14a386` succeeded.
+- Cold live checks passed for `/`, `/?demo=1`, `/demo`, `/privacy`, `/terms`, `/404`, and a new missing route. The missing route returned HTTP 404.
+- Live demo at 390 × 844 showed the persistent banner, 4/9/1 summary, and three complete sample rows ending at 514 px. Reset worked offline and preserved pre-seeded real storage.
+- Live requests stayed same-origin. A clean context had no cookies, local/session storage, IndexedDB, Cache Storage, or service worker.
+- Live standalone axe: 0 violations. Live mobile Lighthouse: 100/100/100/100; LCP 0.829 s, CLS 0, TBT 17.5 ms.
+- Primary evidence: [cold live demo](evidence/polish-3-live/demo-cold-mobile.png), [cold browser assertions](evidence/polish-3-live/cold-check.json), [CLI error processes](evidence/polish-3-local/cli-errors.json), [live axe](evidence/polish-3-live/axe-demo.txt), and [live Lighthouse](evidence/polish-3-live/lighthouse-mobile.json).
 
-## Next step
+## Known gaps and next steps
 
-Resolve F-3-1 by narrowing the README sentence or expanding the registered claim, error copy, and tagged test to cover unreadable files and concrete recovery guidance. Then rerun the full checklist.
+None. The crate remains ready for the factory-owned publication process; it was not published from this worker.

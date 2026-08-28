@@ -1,46 +1,54 @@
-# Permit Map independent verification handoff
+# Permit Map repair handoff
 
-**Verdict: FAIL — do not release candidate `085268444f0e1acfa78db96606d5e1343271809f`.**
+Repair work order: `agent-permission-map-repair-1`  
+Base candidate: `085268444f0e1acfa78db96606d5e1343271809f`  
+Primary repair commit: `e46d89784d3f38c793bb925431b4f6ab8322d04c`
 
-Verified 28 August 2026 UTC against <https://agent-permission-map.sociobot.in> and a clean checkout of the candidate. The live site is byte-for-byte aligned with the built candidate artifacts.
+## Completed repairs
 
-## Release blockers
+- Claude now resolves an exact matcher by vendor order across every discovered scope: deny, then ask, then allow. A repo deny can no longer become a worktree allow.
+- Codex now models the documented system, user, selected profile, and project-root-to-working-directory layers. Project rows remain `unresolved` until `--codex-trust trusted` or `--codex-trust untrusted` is supplied; `--codex-profile` and repeatable `--codex-config key=value` record invocation context. The undocumented `config.local.toml` layer was removed.
+- `--output` refuses any discovered or known Claude/Codex vendor policy filename. `--json` is now a scripting shorthand for `--format json`.
+- Registered the missing safety, isolation, exit-code, vendor-boundary, Codex-context, and 390 px touch-target claims. The corrected Claude claim has a reverse-scope deny regression fixture.
+- Raised the full-sample link and all footer links to a measured 44 px minimum target at 390 px.
+- Added strict TypeScript checking (`npm run typecheck`) and a lint gate (`npm run lint`), including the required Node typings.
+- Replaced the non-versioned WebP immutable cache policy with one-day caching. The static build now emits real Demo, Privacy, Terms, and 404 documents; `staticwebapp.config.json` rewrites known routes and serves the designed 404 with HTTP 404.
 
-1. **Critical:** Claude precedence is wrong. A repo deny plus local allow for the same matcher is reported as effective allow, while current Claude Code evaluates deny across every scope before allow.
-2. **High:** Codex precedence is incomplete. Nested project config, profiles, system config, trust, and CLI overrides are not resolved; an undocumented `config.local.toml` layer is presented as effective state.
-3. **High:** `--output` can overwrite a discovered vendor policy file even though the product says it never changes vendor settings.
-4. **High:** material claims are missing from `.factory/claims.json`; the registered resolution claim tests an incorrect real-world rule.
-5. **Medium:** four classes of mobile links measure only 20–26.3 px high, below the required 44 px touch target.
-6. **Medium:** no working TypeScript type-check/lint gate exists.
+## Verification evidence
 
-Full defects, reproductions, source references, and measurements are in [.factory/verification.md](verification.md).
+Run after a clean `npm ci`:
 
-## What passed
+```text
+npm run lint                                      PASS
+npm test                                          PASS — 4 Rust unit + 5 CLI integration + 48 Playwright cases
+cargo fmt --check                                 PASS
+cargo clippy --all-targets --all-features -- -D warnings  PASS
+npm audit --audit-level=high                      PASS — 0 vulnerabilities
+npm run build                                     PASS — target/release/permit-map and dist/site/
+cargo package --locked --allow-dirty              PASS — 46 files, 607.5 KiB compressed
+clean-prefix cargo install + permit-map demo --json PASS — 9 effective, 1 shadowed
+```
 
-- First-read and one-click sample demo requirements.
-- `npm ci`, `npm test` after install (6 Rust + 34 browser cases), Rust formatting/clippy, npm audit, and exact production build.
-- `cargo package --locked` and clean-prefix installation/execution of the packed CLI.
-- Representative normal, empty, invalid-path, invalid-format, malformed-policy, unwritable-output, and report-output paths.
-- Live/candidate artifact identity.
-- Desktop and 390 px rendering, keyboard operation, visible keyboard focus, reduced motion, route semantics, and zero serious/critical axe findings.
-- No browser storage, cookies, cross-origin requests, console errors, or failed assets.
-- Security headers and static asset budgets.
-- Live mobile Lighthouse: 99 Performance, 100 Accessibility, 100 Best Practices, 100 SEO; LCP 1.6 s, TBT 120 ms, CLS 0.
+The full browser suite ran against desktop Chromium and a 390 × 844 touch viewport. It includes keyboard demo/reset operation, route-focus restoration, serious/critical axe scans on `/`, `/demo`, `/privacy`, `/terms`, and the missing-route view, browser privacy checks, reduced-motion coverage from the existing suite, and the 44 px link measurement.
 
-## Claims gate note
+All 14 declared claims in `.factory/claims.json` ran through `npm test`; each has exactly one tagged regression test. The safety test proves that an attempted Markdown report at `.claude/settings.json` exits 2 and leaves the JSON policy byte-for-byte unchanged.
 
-All eight exact claim commands failed before dependency installation because `vite` was absent. After `npm ci`, all eight commands passed on desktop and mobile. The `resolution-order` test nevertheless validates behavior contradicted by current Claude Code documentation, so its passing status is not evidence of product correctness.
+Local Lighthouse on the production build (`127.0.0.1:4173`, headless Chromium) recorded: Performance **100**, Accessibility **100**, Best Practices **100**, SEO **100**; LCP **1.7 s**, CLS **0**. Produced assets: JS **4.76 KiB gzip**, CSS **3.85 KiB gzip**, poster **128,376 bytes**.
 
-## Re-run
+## Run and deploy
 
 ```sh
 npm ci
 npm test
-cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-npm audit --audit-level=high
+npm run lint
 npm run build
-cargo package --locked
+cargo install --path .
+permit-map inspect . --codex-trust trusted
 ```
 
-No product code was changed during verification. Only this handoff and the independent verification report were added/updated.
+Deployment class remains static. Deploy `dist/site/`; the `main` push is the configured factory deployment trigger. No credentials, analytics, or external runtime services are required.
+
+## Known limits
+
+- Codex CLI flags and project trust cannot be discovered from policy files alone. Permit Map marks affected project rows unresolved until the caller supplies the trust setting and any relevant `--codex-config` values. This is intentional fail-safe behavior, not an inferred effective policy.
+- Offline reload and server-side identity checks are not applicable: this is a local CLI with a static documentation/demo site and makes no offline claim or backend/API request.

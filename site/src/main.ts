@@ -112,7 +112,7 @@ function firstScreenRules(): string {
 }
 
 function demo(): string {
-  return `${header()}<aside class="demo-banner" aria-label="Demo mode"><div class="shell"><p><strong>Demo — sample data, nothing is saved</strong></p><div><button type="button" id="reset-demo">Reset demo</button><a href="/#install" data-link>Start for real</a></div></div></aside>
+  return `${header()}<aside class="demo-banner" aria-label="Demo mode"><div class="shell"><p><strong>Demo — sample data, nothing is saved</strong></p><div><button type="button" id="reset-demo">Reset demo</button><a href="/#install" data-link>View install command</a></div></div></aside>
   <main id="main"><section class="demo-head shell"><div><p class="eyebrow">Bundled sample · isolated preview</p><h1 tabindex="-1">Review the resolved permission map</h1><p>The sample combines Claude Code and Codex policies from four files.</p></div><div class="demo-summary" aria-label="Report summary"><div><strong>4</strong><span>sources</span></div><div><strong>9</strong><span>effective</span></div><div><strong>1</strong><span>shadowed</span></div></div>${firstScreenRules()}</section>
   <section class="report shell" aria-labelledby="rules-title"><div class="report-heading"><div><h2 id="rules-title">Resolved rules</h2><p id="demo-status" aria-live="polite">Claude denies win across scopes. This sample marks its Codex project as trusted.</p></div><a class="ticket secondary" href="/terminal-demo.svg" download>Download terminal recording</a></div>${rulesTable()}</section>
   <section class="adapter-notes shell" aria-labelledby="notes-title"><h2 id="notes-title">Adapter notes</h2><ul><li>Claude evaluates exact matches as deny, then ask, then allow across scopes.</li><li>Codex reads system, user, selected profile, and trusted project layers. Unknown trust stays unresolved.</li><li>Pattern overlap stays visible because vendor meanings can differ.</li></ul></section>
@@ -130,7 +130,7 @@ function policyPage(kind: "privacy" | "terms"): string {
     <p>Permit Map is free software under the MIT license.</p>
     <h2>No warranty</h2><p>The tool reports supported policy fields. Review vendor documentation before relying on a report for security decisions.</p>
     <h2>Your responsibility</h2><p>You control which repository the CLI inspects. You remain responsible for agent access and configuration.</p>
-    <h2>Changes</h2><p>Material changes will appear in this page and the project changelog.</p>`}</article></main>${footer()}`;
+    <h2>Changes</h2><p>Check this page and the project changelog for changes.</p>`}</article></main>${footer()}`;
 }
 
 function notFound(): string {

@@ -65,21 +65,27 @@ test("the in-memory demo resets after the browser goes offline", async ({ page, 
   await expect(page.locator("#full-rule-table tbody tr")).toHaveCount(10);
 });
 
-test("keyboard start-for-real moves focus to the install destination", async ({ page }) => {
+test("keyboard install action moves focus to the install destination", async ({ page }) => {
   await page.goto("/demo");
-  const start = page.getByRole("link", { name: "Start for real" });
+  const start = page.getByRole("link", { name: "View install command" });
   await start.focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/#install$/);
   await expect(page.getByRole("heading", { name: "Install the single binary" })).toBeFocused();
 });
 
-test("Start for real exposes a complete source install command", async ({ page }) => {
+test("View install command exposes a complete source install command", async ({ page }) => {
   await page.goto("/demo");
-  await page.getByRole("link", { name: "Start for real" }).click();
+  await page.getByRole("link", { name: "View install command" }).click();
   await expect(page.locator("#install code")).toContainText("git clone https://github.com/B-Divyesh/sf-agent-permission-map.git");
   await expect(page.locator("#install code")).toContainText("cargo install --path .");
   await expect(page.getByRole("link", { name: /source repository/ })).toHaveAttribute("href", "https://github.com/B-Divyesh/sf-agent-permission-map");
+});
+
+test("terms uses a present-tense change instruction", async ({ page }) => {
+  await page.goto("/terms");
+  await expect(page.getByText("Check this page and the project changelog for changes.")).toBeVisible();
+  await expect(page.getByText(/Material changes will appear/)).toHaveCount(0);
 });
 
 test("all local page links return content", async ({ page, request }) => {

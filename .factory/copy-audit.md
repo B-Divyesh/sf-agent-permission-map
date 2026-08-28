@@ -45,9 +45,18 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 | It does not guess when vendor patterns overlap. | 8 | Pass |
 | Resolve coding-agent permissions before a session. | 6 | Pass |
 
+## Demo and terms updates
+
+| Copy | Words | Result |
+|---|---:|---|
+| Demo — sample data, nothing is saved | 7 | Pass |
+| Reset demo | 2 | Pass |
+| View install command | 3 | Pass |
+| Check this page and the project changelog for changes. | 9 | Pass |
+
 ## Catalog description
 
-“Resolve coding-agent permissions before an agent runs.” — 7 words, 55 characters, starts with a verb.
+“See resolved coding-agent permissions before an agent runs.” — 8 words, 59 characters, starts with a verb.
 
 ## Terminology
 

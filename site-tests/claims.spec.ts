@@ -61,6 +61,14 @@ test("CLI emits table, JSON, and Markdown reports", { tag: "@claim:report-format
   expect(run("--format", "markdown")).toContain("# Permit Map report");
 });
 
+test("successful inspections exit with status 0", { tag: "@claim:success-exit" }, () => {
+  const result = spawnSync("cargo", ["run", "--quiet", "--", "inspect", "examples/sample-repo", "--no-global", "--format", "json"], { encoding: "utf8" });
+  expect(result.status).toBe(0);
+  const report = JSON.parse(result.stdout);
+  expect(report.counts.sources).toBe(4);
+  expect(report.rules.length).toBeGreaterThan(0);
+});
+
 test("CLI limits automatic discovery to documented policy paths", { tag: "@claim:policy-files" }, () => {
   const root = mkdtempSync(join(tmpdir(), "permit-map-claim-"));
   try {

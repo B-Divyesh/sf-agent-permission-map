@@ -28,6 +28,13 @@
     "sandbox": "bundled examples/sample-repo in a clean local process"
   },
   {
+    "id": "success-exit",
+    "claim": "Successful inspections exit with code 0.",
+    "where": "README usage",
+    "test": "npm test -- --grep @claim:success-exit",
+    "sandbox": "bundled examples/sample-repo in a clean local process; assert status 0 and a valid report"
+  },
+  {
     "id": "policy-files",
     "claim": "Permit Map reads known policy paths instead of scanning repository and credential files.",
     "where": "landing facts, privacy page, and README",

@@ -71,4 +71,14 @@ Local repair evidence before deployment:
 - `npm run typecheck`, `npm run lint`, `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `npm audit --audit-level=high`, and `npm run build`: pass.
 - `cargo package --locked` must run after this repair is committed because Cargo correctly refuses to package a dirty worktree.
 
-The static deploy artifact remains `dist/site/`; the release binary remains `target/release/permit-map`. No known product gaps remain locally. The post-push cold live check and clean-clone claim gate are recorded below once the repair commit is deployed.
+The repair commits are `349664052583a80ab3f5b794e347798edcd8252f` and `33a02f4a95a9bcd19af0ae40182314c410591a7a`; both are pushed to `origin/main`. The latter makes concurrent test fixture paths unique after the clean-clone loop exposed a stale-fixture collision. Twenty-five repeated Rust test runs passed after that change.
+
+Final clean-clone and live evidence:
+
+- Fresh clone `/tmp/permit-map-final.A6LMqi/repo`: `npm ci`, `npm test` (6 Rust unit, 8 Rust integration, 78 desktop/mobile browser executions), typecheck, lint, fmt, clippy, audit, build, and `cargo package --locked` all passed.
+- Every exact `test` command in all 19 entries of `.factory/claims.json` passed independently from that fresh clone.
+- Deployment used `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site` and completed successfully to the configured Static Web App and custom domain.
+- Cold `verify-url.sh` checks passed on [home](https://agent-permission-map.sociobot.in) (716 ms) and [the canonical demo](https://agent-permission-map.sociobot.in/?demo=1) (671 ms): titles, `lang=en`, one `h1`, `<main>`, image alternatives, labels, and console checks were clean. Artifacts are under `.factory/evidence/live-home/` and `.factory/evidence/live-demo/`.
+- A fresh mobile live-browser review visited `/`, `/?demo=1`, `/demo`, `/privacy`, and `/terms`: no serious/critical axe findings, no console errors, same-origin requests only, no cookies/storage/IndexedDB/Cache Storage/service worker, and three full sample rows above the 390 × 844 fold. `/missing-route` returns HTTP 404.
+
+No known gaps remain.

@@ -35,7 +35,7 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 | Print a table or write JSON and Markdown for review. | 10 | Pass |
 | Depart from your terminal | 4 | Pass |
 | Install the single binary | 4 | Pass |
-| Build from source with a current Rust toolchain. | 8 | Pass |
+| Clone the source repository, then build with a current Rust toolchain. | 11 | Pass |
 | Copy command | 2 | Pass |
 | Clear boundaries · line 04 | 5 | Pass |
 | What Permit Map does not do | 6 | Pass |

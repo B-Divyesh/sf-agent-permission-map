@@ -23,9 +23,11 @@ The browser route shows the same four sample files, nine effective rules, and on
 
 ## Install
 
-Build the single binary with a current stable Rust toolchain:
+Clone the repository, then build the single binary with a current stable Rust toolchain:
 
 ```sh
+git clone https://github.com/B-Divyesh/sf-agent-permission-map.git
+cd sf-agent-permission-map
 cargo install --path .
 permit-map --help
 ```

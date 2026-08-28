@@ -2,7 +2,7 @@ import "./style.css";
 
 type Rule = {
   vendor: "claude" | "codex";
-  layer: "global" | "repo" | "worktree";
+  layer: "project" | "repo" | "worktree";
   effect: "allow" | "ask" | "deny";
   status: "effective" | "shadowed";
   target: string;
@@ -15,10 +15,10 @@ const sampleRules: Rule[] = [
   { vendor: "claude", layer: "worktree", effect: "deny", status: "effective", target: "Read(.env*)", source: ".claude/settings.local.json" },
   { vendor: "claude", layer: "repo", effect: "allow", status: "effective", target: "Read(src/**)", source: ".claude/settings.json" },
   { vendor: "claude", layer: "repo", effect: "ask", status: "effective", target: "WebFetch(domain:docs.rs)", source: ".claude/settings.json" },
-  { vendor: "codex", layer: "repo", effect: "ask", status: "effective", target: "approval:on-request", source: ".codex/config.toml" },
-  { vendor: "codex", layer: "repo", effect: "ask", status: "effective", target: "command:git push", source: ".codex/rules/release.rules" },
-  { vendor: "codex", layer: "repo", effect: "deny", status: "effective", target: "command:rm -rf", source: ".codex/rules/release.rules" },
-  { vendor: "codex", layer: "repo", effect: "ask", status: "effective", target: "sandbox:workspace-write", source: ".codex/config.toml" },
+  { vendor: "codex", layer: "project", effect: "ask", status: "effective", target: "approval:on-request", source: ".codex/config.toml" },
+  { vendor: "codex", layer: "project", effect: "ask", status: "effective", target: "command:git push", source: ".codex/rules/release.rules" },
+  { vendor: "codex", layer: "project", effect: "deny", status: "effective", target: "command:rm -rf", source: ".codex/rules/release.rules" },
+  { vendor: "codex", layer: "project", effect: "ask", status: "effective", target: "sandbox:workspace-write", source: ".codex/config.toml" },
   { vendor: "claude", layer: "repo", effect: "allow", status: "shadowed", target: "Bash(git status:*)", source: ".claude/settings.json" },
 ];
 
@@ -62,7 +62,7 @@ Permit Map — 4 sources, 9 effective, 1 shadowed
 <span class="head">VENDOR   LAYER      EFFECT  STATUS      MATCHER</span>
 claude   worktree  <span class="deny">deny</span>    effective   Bash(git status:*)
 claude   repo      <span class="allow">allow</span>   effective   Bash(npm test:*)
-codex    repo      <span class="ask">ask</span>     effective   command:git push
+codex    project   <span class="ask">ask</span>     effective   command:git push
 claude   repo      <span class="allow">allow</span>   <span class="shadow">shadowed</span>    Bash(git status:*)
                   ↳ replaced by settings.local.json</code></pre>
   </figure>`;
@@ -90,7 +90,7 @@ function home(): string {
     <section class="steps shell" aria-labelledby="steps-title"><p class="eyebrow">Working timetable · line 03</p><h2 id="steps-title">Inspect a repository in three steps</h2>
       <ol><li><span>01</span><div><h3>Point at a repository</h3><p>Permit Map checks documented Claude Code and Codex policy paths.</p></div></li><li><span>02</span><div><h3>Check the decision context</h3><p>Claude denies win. Codex project rules need the trust context.</p></div></li><li><span>03</span><div><h3>Share the result</h3><p>Print a table or write JSON and Markdown for review.</p></div></li></ol>
     </section>
-    <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><p class="eyebrow light">Depart from your terminal</p><h2 id="install-title" tabindex="-1">Install the single binary</h2><p>Build from source with a current Rust toolchain.</p></div><div class="command"><code>cargo install --path .</code><button type="button" data-copy="cargo install --path .">Copy command</button></div></div></section>
+    <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><p class="eyebrow light">Depart from your terminal</p><h2 id="install-title" tabindex="-1">Install the single binary</h2><p>Clone the <a href="https://github.com/B-Divyesh/sf-agent-permission-map" rel="external">source repository <span class="sr-only">(external)</span></a>, then build with a current Rust toolchain.</p></div><div class="command"><code>git clone https://github.com/B-Divyesh/sf-agent-permission-map.git && cd sf-agent-permission-map && cargo install --path .</code><button type="button" data-copy="git clone https://github.com/B-Divyesh/sf-agent-permission-map.git &amp;&amp; cd sf-agent-permission-map &amp;&amp; cargo install --path .">Copy command</button></div></div></section>
     <section class="limits shell" aria-labelledby="limits-title"><div><p class="eyebrow">Clear boundaries · line 04</p><h2 id="limits-title">What Permit Map does not do</h2></div><ul><li>It does not run an agent.</li><li>It does not change vendor settings.</li><li>It does not read source files or credential stores.</li><li>It does not guess when vendor patterns overlap.</li></ul></section>
   </main>${footer()}`;
 }

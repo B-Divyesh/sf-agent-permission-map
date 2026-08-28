@@ -1,15 +1,24 @@
 import { expect, test } from "@playwright/test";
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { linkSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-test("sample resolves four files and exposes the shadowed rule", { tag: "@claim:demo-resolves" }, async ({ page }) => {
+test("sample browser rows exactly match the bundled CLI report", { tag: "@claim:demo-resolves" }, async ({ page }) => {
   await page.goto("/demo");
   await expect(page.getByText("Demo — sample data, nothing is saved")).toBeVisible();
   await expect(page.getByLabel("Report summary")).toContainText("4sources9effective1shadowed");
   await expect(page.locator("tr.shadowed")).toHaveCount(1);
   await expect(page.locator("tr.shadowed")).toContainText("Bash(git status:*)");
+  const cli = JSON.parse(execFileSync("cargo", ["run", "--quiet", "--", "demo", "--format", "json"], { encoding: "utf8" }));
+  const browserRows = await page.locator("tbody tr").evaluateAll(rows => rows.map(row => {
+    const cells = [...row.querySelectorAll("td")].map(cell => cell.textContent?.trim() ?? "");
+    return { vendor: cells[0], layer: cells[1], effect: cells[2], status: cells[3], target: cells[4], source: cells[5] };
+  }));
+  expect(browserRows).toEqual(cli.rules.map((rule: { vendor: string; layer: string; effect: string; status: string; target: string; source: string }) => ({
+    vendor: rule.vendor, layer: rule.layer, effect: rule.effect, status: rule.status, target: rule.target, source: rule.source,
+  })));
 });
 
 test("CLI emits table, JSON, and Markdown reports", { tag: "@claim:report-formats" }, () => {
@@ -158,6 +167,31 @@ test("report output cannot replace a discovered vendor policy", { tag: "@claim:v
     linkSync(policy, alias);
     expect(() => execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--output", alias])).toThrow();
     expect(readFileSync(policy, "utf8")).toBe(original);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("inspection does not change any discovered vendor settings", { tag: "@claim:vendor-settings-unchanged" }, () => {
+  const root = mkdtempSync(join(tmpdir(), "permit-map-settings-unchanged-"));
+  try {
+    mkdirSync(join(root, ".claude"));
+    mkdirSync(join(root, ".codex/rules"), { recursive: true });
+    const policies = [
+      join(root, ".claude", "settings.json"),
+      join(root, ".claude", "settings.local.json"),
+      join(root, ".codex", "config.toml"),
+      join(root, ".codex", "rules", "release.rules"),
+    ];
+    writeFileSync(policies[0], '{"permissions":{"allow":["Read(src/**)"]}}');
+    writeFileSync(policies[1], '{"permissions":{"deny":["Read(.env*)"]}}');
+    writeFileSync(policies[2], 'sandbox_mode = "workspace-write"');
+    writeFileSync(policies[3], 'prefix_rule(pattern = ["git", "push"], decision = "forbidden", justification = "Use the reviewed release workflow instead")');
+    const fingerprint = () => policies.map(path => createHash("sha256").update(readFileSync(path)).digest("hex"));
+    const before = fingerprint();
+    const result = spawnSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--codex-trust", "trusted", "--format", "json"], { encoding: "utf8" });
+    expect(result.status).toBe(0);
+    expect(fingerprint()).toEqual(before);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -77,6 +77,13 @@
     "sandbox": "temporary repository; request Markdown output at .claude/settings.json and assert the original JSON remains"
   },
   {
+    "id": "vendor-settings-unchanged",
+    "claim": "Permit Map does not change vendor settings.",
+    "where": "landing boundaries",
+    "test": "npm test -- --grep @claim:vendor-settings-unchanged",
+    "sandbox": "temporary repository with every supported project policy file; hash each file before and after a successful trusted inspection"
+  },
+  {
     "id": "cli-errors",
     "claim": "Missing paths and malformed supported policy files exit with code 2.",
     "where": "README usage",

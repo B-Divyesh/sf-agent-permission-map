@@ -15,6 +15,6 @@ The CLI copies these bundled files to a new operating-system temporary directory
 
 ## Reset and isolation
 
-The browser demo holds sample data in memory. It uses no local storage, cookies, IndexedDB, or network API. **Reset demo** restores the bundled view. **Start for real** returns to local install instructions.
+The browser demo holds sample data in memory. It uses no local storage, cookies, IndexedDB, or network API. **Reset demo** restores the bundled view. **Start for real** returns to clone-and-install instructions with a source repository link.
 
 The CLI demo uses a unique directory named `permit-map-demo-<process>-<time>`. The operating system may clear that directory later. It never becomes a real Permit Map data namespace because the CLI saves no product state.

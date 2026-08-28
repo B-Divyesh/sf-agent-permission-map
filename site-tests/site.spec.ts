@@ -50,6 +50,14 @@ test("keyboard start-for-real moves focus to the install destination", async ({ 
   await expect(page.getByRole("heading", { name: "Install the single binary" })).toBeFocused();
 });
 
+test("Start for real exposes a complete source install command", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByRole("link", { name: "Start for real" }).click();
+  await expect(page.locator("#install code")).toContainText("git clone https://github.com/B-Divyesh/sf-agent-permission-map.git");
+  await expect(page.locator("#install code")).toContainText("cargo install --path .");
+  await expect(page.getByRole("link", { name: /source repository/ })).toHaveAttribute("href", "https://github.com/B-Divyesh/sf-agent-permission-map");
+});
+
 test("all local page links return content", async ({ page, request }) => {
   await page.goto("/");
   const paths = await page.locator("a[href]").evaluateAll(links => [...new Set(links.map(link => new URL((link as HTMLAnchorElement).href).pathname).filter(path => path !== "/"))]);
@@ -65,6 +73,29 @@ test("390px layout stays inside the viewport", async ({ page }) => {
     await page.goto(route);
     const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(hasOverflow, `${route} should not overflow`).toBeFalsy();
+  }
+});
+
+test("first read fits the audience, sample action, and facts at 1366 by 768", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/");
+  for (const locator of [page.locator(".lede"), page.getByRole("link", { name: /Try it with sample data/ }), page.locator(".plain-facts")]) {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(768);
+  }
+});
+
+test("secondary routes include route-specific social metadata", async ({ page }) => {
+  for (const route of ["/demo", "/privacy", "/terms", "/404/"]) {
+    await page.goto(route);
+    await expect(page.locator('meta[property="og:title"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:description"]')).toHaveCount(1);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og-image\.png$/);
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+    await expect(page.locator('meta[name="twitter:title"]')).toHaveCount(1);
+    await expect(page.locator('meta[name="twitter:description"]')).toHaveCount(1);
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", /og-image\.png$/);
   }
 });
 

@@ -743,6 +743,7 @@ impl CodexRulesParser {
             self.expect(CodexTokenKind::LeftParen, "'('")?;
             let mut patterns = None;
             let mut effect = Effect::Allow;
+            let mut justification_seen = false;
             loop {
                 if self.consume_right_paren() {
                     break;
@@ -768,6 +769,17 @@ impl CodexRulesParser {
                                 ));
                             }
                         };
+                    }
+                    // `justification` is an optional documented Codex field. It
+                    // explains a rule to Codex, but does not change Permit Map's
+                    // resolved decision, so accept its quoted value without
+                    // adding it to the normalized permission report.
+                    "justification" => {
+                        if justification_seen {
+                            return Err(format!("line {line}: duplicate justification argument"));
+                        }
+                        self.take_string()?;
+                        justification_seen = true;
                     }
                     _ => {
                         return Err(format!(
@@ -1293,7 +1305,11 @@ prefix_rule(
   pattern = ["git", ["push", "status"]],
   decision = "prompt",
 )
-prefix_rule(pattern = ["git", "push"], decision = "forbidden")
+prefix_rule(
+  pattern = ["git", "push"],
+  decision = "forbidden",
+  justification = "Use the reviewed release workflow instead",
+)
 prefix_rule(pattern = ["git", "push"], decision = "allow")
 prefix_rule(pattern = ["cargo", "test"])
 "#,

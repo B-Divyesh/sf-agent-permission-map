@@ -7,6 +7,23 @@ license = "MIT"
 repository = "https://github.com/B-Divyesh/sf-agent-permission-map"
 keywords = ["cli", "security", "agents", "permissions"]
 categories = ["command-line-utilities", "development-tools"]
+include = [
+    "src/**",
+    "tests/**",
+    "examples/sample-repo/**",
+    ".factory/brief.json",
+    ".factory/claims.json",
+    ".factory/copy-audit.md",
+    ".factory/demo.md",
+    ".factory/design.md",
+    ".factory/handoff.md",
+    "Cargo.lock",
+    "Cargo.toml",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "!node_modules/**",
+]
 
 [[bin]]
 name = "permit-map"

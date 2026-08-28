@@ -3,6 +3,9 @@ use permit_map::{
     CodexTrust, InspectOptions, Report, inspect_with_options, render_markdown, render_table,
 };
 use std::fs;
+use std::io::Write;
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -51,7 +54,7 @@ enum Command {
         /// Shorthand for --format json
         #[arg(long)]
         json: bool,
-        /// Write the report to this file; defaults to permit-map-report.md in the demo directory
+        /// Write the report to this relative path inside the demo directory
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -151,7 +154,7 @@ fn write_output(contents: String, output: Option<PathBuf>, report: &Report) -> R
         if report
             .policy_paths
             .iter()
-            .any(|policy| same_path(policy, &path))
+            .any(|policy| same_file(policy, &path))
             || is_vendor_policy_path(&path)
         {
             return Err(format!(
@@ -159,7 +162,18 @@ fn write_output(contents: String, output: Option<PathBuf>, report: &Report) -> R
                 path.display()
             ));
         }
-        fs::write(&path, contents).map_err(|e| format!("Cannot write {}: {e}", path.display()))?;
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+            .map_err(|e| {
+                format!(
+                    "Cannot write {}: {e}. Report paths must be new files.",
+                    path.display()
+                )
+            })?;
+        file.write_all(contents.as_bytes())
+            .map_err(|e| format!("Cannot write {}: {e}", path.display()))?;
         println!("Wrote {}", path.display());
     } else {
         print!("{contents}");
@@ -185,22 +199,23 @@ fn is_vendor_policy_path(path: &Path) -> bool {
         && (file == "config.toml" || file.ends_with(".config.toml") || file.ends_with(".rules"))
 }
 
-fn same_path(policy: &Path, candidate: &Path) -> bool {
-    let Ok(policy) = fs::canonicalize(policy) else {
+fn same_file(policy: &Path, candidate: &Path) -> bool {
+    let (Ok(policy_metadata), Ok(candidate_metadata)) =
+        (fs::metadata(policy), fs::metadata(candidate))
+    else {
         return false;
     };
-    let candidate = if candidate.exists() {
-        fs::canonicalize(candidate)
-    } else {
-        candidate
-            .parent()
-            .and_then(|parent| fs::canonicalize(parent).ok())
-            .and_then(|parent| candidate.file_name().map(|name| parent.join(name)))
-            .ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::NotFound, "output parent does not exist")
-            })
-    };
-    candidate.is_ok_and(|candidate| candidate == policy)
+    #[cfg(unix)]
+    {
+        policy_metadata.dev() == candidate_metadata.dev()
+            && policy_metadata.ino() == candidate_metadata.ino()
+    }
+    #[cfg(not(unix))]
+    {
+        fs::canonicalize(policy)
+            .zip(fs::canonicalize(candidate))
+            .is_ok_and(|(policy, candidate)| policy == candidate)
+    }
 }
 
 fn run_demo(format: Format, output: Option<PathBuf>) -> Result<(), String> {
@@ -242,11 +257,29 @@ fn run_demo(format: Format, output: Option<PathBuf>) -> Result<(), String> {
         },
     )?;
     let output = output
+        .map(|path| demo_output_path(&root, &path))
+        .transpose()?
         .or_else(|| matches!(format, Format::Markdown).then(|| root.join("permit-map-report.md")));
     write_output(format_report(&report, format)?, output, &report)?;
     eprintln!("Demo files: {}", root.display());
     eprintln!("Nothing outside this temporary directory was read or changed.");
     Ok(())
+}
+
+fn demo_output_path(root: &Path, output: &Path) -> Result<PathBuf, String> {
+    if output.is_absolute()
+        || output.components().any(|component| {
+            matches!(
+                component,
+                std::path::Component::ParentDir
+                    | std::path::Component::RootDir
+                    | std::path::Component::Prefix(_)
+            )
+        })
+    {
+        return Err("Demo --output must be a relative path inside its temporary directory.".into());
+    }
+    Ok(root.join(output))
 }
 
 fn demo_write_error(error: std::io::Error) -> String {

@@ -63,6 +63,13 @@
     "sandbox": "temporary Git-like repository with root and nested .codex/config.toml files"
   },
   {
+    "id": "codex-rules",
+    "claim": "Permit Map reads documented multiline Codex command rules, expands union patterns, defaults a missing decision to allow, and resolves exact matches forbidden, then prompt, then allow.",
+    "where": "README resolution rules and report adapter notes",
+    "test": "npm test -- --grep @claim:codex-rules",
+    "sandbox": "temporary trusted repository with multiline, union, default, forbidden, prompt, and allow .rules entries"
+  },
+  {
     "id": "vendor-policy-safe",
     "claim": "Permit Map refuses to write a report over a discovered vendor policy file.",
     "where": "landing boundaries and README",

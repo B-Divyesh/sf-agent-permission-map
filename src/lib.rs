@@ -310,7 +310,7 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
         match vendor.as_str() {
             "claude" => parse_claude(&path, layer, &source, priority, &mut raw)?,
             "codex" if path.extension().and_then(|v| v.to_str()) == Some("rules") => {
-                parse_codex_rules(&path, layer, &source, priority, &mut raw, &mut notes)?
+                parse_codex_rules(&path, layer, &source, priority, &mut raw)?
             }
             "codex" => parse_codex_config(&path, layer, &source, priority, &mut raw, &mut notes)?,
             _ => unreachable!(),
@@ -337,7 +337,7 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
             .into(),
     );
     notes.push(
-        "Codex controls resolve system, user, selected profile, then trusted project files; CLI overrides are highest.".into(),
+        "Codex command rules resolve forbidden, then prompt, then allow for an exact command prefix; controls resolve system, user, selected profile, then trusted project files; CLI overrides are highest.".into(),
     );
     match options.codex_trust {
         CodexTrust::Unknown
@@ -374,7 +374,9 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
             }
             Some(current) => {
                 let old = &raw[current];
-                let new_rank = if candidate.vendor == "claude" {
+                let new_rank = if candidate.vendor == "claude"
+                    || (candidate.vendor == "codex" && candidate.match_key.starts_with("command:"))
+                {
                     (
                         candidate.effect.weight() as usize,
                         candidate.priority,
@@ -383,7 +385,9 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
                 } else {
                     (candidate.priority, 0, candidate.order)
                 };
-                let old_rank = if old.vendor == "claude" {
+                let old_rank = if old.vendor == "claude"
+                    || (old.vendor == "codex" && old.match_key.starts_with("command:"))
+                {
                     (old.effect.weight() as usize, old.priority, old.order)
                 } else {
                     (old.priority, 0, old.order)
@@ -578,95 +582,367 @@ fn parse_codex_rules(
     source: &str,
     priority: usize,
     out: &mut Vec<RawRule>,
-    notes: &mut Vec<String>,
 ) -> Result<(), String> {
     let input =
         fs::read_to_string(path).map_err(|e| format!("Cannot read {}: {e}", path.display()))?;
-    for (line_no, line) in input.lines().enumerate() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
+    let mut parser = CodexRulesParser::new(&input)
+        .map_err(|error| format!("Cannot parse {} as Codex rules: {error}", path.display()))?;
+    for parsed in parser
+        .parse()
+        .map_err(|error| format!("Cannot parse {} as Codex rules: {error}", path.display()))?
+    {
+        for pattern in parsed.patterns {
+            push_rule(
+                out,
+                "codex",
+                layer,
+                parsed.effect,
+                format!("command:{}", pattern.join(" ")),
+                source,
+                priority,
+            );
         }
-        if !line.starts_with("prefix_rule(") {
-            notes.push(format!(
-                "{source}:{} uses unsupported Codex rule syntax.",
-                line_no + 1
-            ));
-            continue;
-        }
-        let decision = extract_quoted_after(line, "decision=")
-            .or_else(|| extract_quoted_after(line, "decision ="));
-        let Some(decision) = decision else {
-            notes.push(format!(
-                "{source}:{} has no readable decision.",
-                line_no + 1
-            ));
-            continue;
-        };
-        let effect = match decision.as_str() {
-            "allow" => Effect::Allow,
-            "prompt" | "ask" => Effect::Ask,
-            "forbidden" | "deny" => Effect::Deny,
-            _ => {
-                notes.push(format!(
-                    "{source}:{} has unsupported decision '{decision}'.",
-                    line_no + 1
-                ));
-                continue;
-            }
-        };
-        let pattern = extract_bracket_strings(line).join(" ");
-        if pattern.is_empty() {
-            notes.push(format!(
-                "{source}:{} has no readable command prefix.",
-                line_no + 1
-            ));
-            continue;
-        }
-        push_rule(
-            out,
-            "codex",
-            layer,
-            effect,
-            format!("command:{pattern}"),
-            source,
-            priority,
-        );
     }
     Ok(())
 }
 
-fn extract_quoted_after(line: &str, marker: &str) -> Option<String> {
-    let rest = line.split_once(marker)?.1.trim_start();
-    let quote = rest.chars().next()?;
-    if quote != '"' && quote != '\'' {
-        return None;
-    }
-    Some(rest[1..].split(quote).next()?.to_string())
+#[derive(Clone, Debug)]
+enum CodexTokenKind {
+    Identifier(String),
+    String(String),
+    LeftParen,
+    RightParen,
+    LeftBracket,
+    RightBracket,
+    Comma,
+    Equal,
 }
 
-fn extract_bracket_strings(line: &str) -> Vec<String> {
-    let Some(start) = line.find('[') else {
-        return Vec::new();
-    };
-    let Some(end_rel) = line[start..].find(']') else {
-        return Vec::new();
-    };
-    let mut values = Vec::new();
-    let mut chars = line[start + 1..start + end_rel].chars().peekable();
-    while let Some(ch) = chars.next() {
-        if ch == '"' || ch == '\'' {
-            let mut value = String::new();
-            for next in chars.by_ref() {
-                if next == ch {
+#[derive(Clone, Debug)]
+struct CodexToken {
+    kind: CodexTokenKind,
+    line: usize,
+}
+
+#[derive(Debug)]
+struct ParsedCodexRule {
+    effect: Effect,
+    patterns: Vec<Vec<String>>,
+}
+
+/// A deliberately small parser for Codex's documented Python-like `.rules`
+/// grammar. Parsing complete calls (rather than physical lines) makes malformed
+/// policy a CLI error instead of silently changing the reported permission map.
+struct CodexRulesParser {
+    tokens: Vec<CodexToken>,
+    position: usize,
+}
+
+impl CodexRulesParser {
+    fn new(input: &str) -> Result<Self, String> {
+        let mut tokens = Vec::new();
+        let mut chars = input.chars().peekable();
+        let mut line = 1;
+        while let Some(character) = chars.next() {
+            match character {
+                ' ' | '\t' | '\r' => {}
+                '\n' => line += 1,
+                '#' => {
+                    for next in chars.by_ref() {
+                        if next == '\n' {
+                            line += 1;
+                            break;
+                        }
+                    }
+                }
+                '(' => tokens.push(CodexToken {
+                    kind: CodexTokenKind::LeftParen,
+                    line,
+                }),
+                ')' => tokens.push(CodexToken {
+                    kind: CodexTokenKind::RightParen,
+                    line,
+                }),
+                '[' => tokens.push(CodexToken {
+                    kind: CodexTokenKind::LeftBracket,
+                    line,
+                }),
+                ']' => tokens.push(CodexToken {
+                    kind: CodexTokenKind::RightBracket,
+                    line,
+                }),
+                ',' => tokens.push(CodexToken {
+                    kind: CodexTokenKind::Comma,
+                    line,
+                }),
+                '=' => tokens.push(CodexToken {
+                    kind: CodexTokenKind::Equal,
+                    line,
+                }),
+                '"' | '\'' => {
+                    let quote = character;
+                    let mut value = String::new();
+                    let mut closed = false;
+                    while let Some(next) = chars.next() {
+                        match next {
+                            '\n' => return Err(format!("line {line}: unterminated string")),
+                            '\\' => match chars.next() {
+                                Some('"') => value.push('"'),
+                                Some('\'') => value.push('\''),
+                                Some('\\') => value.push('\\'),
+                                Some(other) => {
+                                    value.push('\\');
+                                    value.push(other);
+                                }
+                                None => return Err(format!("line {line}: unterminated escape")),
+                            },
+                            next if next == quote => {
+                                closed = true;
+                                break;
+                            }
+                            other => value.push(other),
+                        }
+                    }
+                    if !closed {
+                        return Err(format!("line {line}: unterminated string"));
+                    }
+                    tokens.push(CodexToken {
+                        kind: CodexTokenKind::String(value),
+                        line,
+                    });
+                }
+                character if character.is_ascii_alphabetic() || character == '_' => {
+                    let mut value = String::from(character);
+                    while let Some(next) = chars.peek() {
+                        if next.is_ascii_alphanumeric() || *next == '_' || *next == '-' {
+                            value.push(*next);
+                            chars.next();
+                        } else {
+                            break;
+                        }
+                    }
+                    tokens.push(CodexToken {
+                        kind: CodexTokenKind::Identifier(value),
+                        line,
+                    });
+                }
+                other => return Err(format!("line {line}: unexpected character '{other}'")),
+            }
+        }
+        Ok(Self {
+            tokens,
+            position: 0,
+        })
+    }
+
+    fn parse(&mut self) -> Result<Vec<ParsedCodexRule>, String> {
+        let mut rules = Vec::new();
+        while self.peek().is_some() {
+            let line = self.current_line();
+            self.expect_identifier("prefix_rule")?;
+            self.expect(CodexTokenKind::LeftParen, "'('")?;
+            let mut patterns = None;
+            let mut effect = Effect::Allow;
+            loop {
+                if self.consume_right_paren() {
                     break;
                 }
-                value.push(next);
+                let key = self.take_identifier()?;
+                self.expect(CodexTokenKind::Equal, "'='")?;
+                match key.as_str() {
+                    "pattern" => {
+                        if patterns.is_some() {
+                            return Err(format!("line {line}: duplicate pattern argument"));
+                        }
+                        patterns = Some(self.parse_pattern()?);
+                    }
+                    "decision" => {
+                        let decision = self.take_string()?;
+                        effect = match decision.as_str() {
+                            "allow" => Effect::Allow,
+                            "prompt" => Effect::Ask,
+                            "forbidden" => Effect::Deny,
+                            _ => {
+                                return Err(format!(
+                                    "line {line}: unsupported decision '{decision}'"
+                                ));
+                            }
+                        };
+                    }
+                    _ => {
+                        return Err(format!(
+                            "line {line}: unsupported prefix_rule argument '{key}'"
+                        ));
+                    }
+                }
+                if self.consume_right_paren() {
+                    break;
+                }
+                self.expect(CodexTokenKind::Comma, "',' or ')'")?;
             }
-            values.push(value);
+            let patterns =
+                patterns.ok_or_else(|| format!("line {line}: prefix_rule needs a pattern"))?;
+            rules.push(ParsedCodexRule { effect, patterns });
+        }
+        Ok(rules)
+    }
+
+    fn parse_pattern(&mut self) -> Result<Vec<Vec<String>>, String> {
+        self.expect(CodexTokenKind::LeftBracket, "'['")?;
+        let mut segments = Vec::new();
+        loop {
+            if self.consume_right_bracket() {
+                break;
+            }
+            let alternatives = match self.peek().map(|token| &token.kind) {
+                Some(CodexTokenKind::String(_)) => vec![self.take_string()?],
+                Some(CodexTokenKind::LeftBracket) => self.parse_union()?,
+                _ => {
+                    return Err(format!(
+                        "line {}: pattern needs a string or union list",
+                        self.current_line()
+                    ));
+                }
+            };
+            if alternatives.is_empty() {
+                return Err(format!(
+                    "line {}: union list cannot be empty",
+                    self.current_line()
+                ));
+            }
+            segments.push(alternatives);
+            if self.consume_right_bracket() {
+                break;
+            }
+            self.expect(CodexTokenKind::Comma, "',' or ']'")?;
+        }
+        if segments.is_empty() {
+            return Err(format!(
+                "line {}: pattern cannot be empty",
+                self.current_line()
+            ));
+        }
+        let mut expanded = vec![Vec::new()];
+        for alternatives in segments {
+            let mut next = Vec::new();
+            for prefix in &expanded {
+                for option in &alternatives {
+                    let mut command = prefix.clone();
+                    command.push(option.clone());
+                    next.push(command);
+                }
+            }
+            expanded = next;
+        }
+        Ok(expanded)
+    }
+
+    fn parse_union(&mut self) -> Result<Vec<String>, String> {
+        self.expect(CodexTokenKind::LeftBracket, "'['")?;
+        let mut alternatives = Vec::new();
+        loop {
+            if self.consume_right_bracket() {
+                break;
+            }
+            match self.peek().map(|token| &token.kind) {
+                Some(CodexTokenKind::String(_)) => alternatives.push(self.take_string()?),
+                Some(CodexTokenKind::LeftBracket) => alternatives.extend(self.parse_union()?),
+                _ => {
+                    return Err(format!(
+                        "line {}: union list needs strings",
+                        self.current_line()
+                    ));
+                }
+            }
+            if self.consume_right_bracket() {
+                break;
+            }
+            self.expect(CodexTokenKind::Comma, "',' or ']'")?;
+        }
+        Ok(alternatives)
+    }
+
+    fn peek(&self) -> Option<&CodexToken> {
+        self.tokens.get(self.position)
+    }
+
+    fn current_line(&self) -> usize {
+        self.peek()
+            .map(|token| token.line)
+            .unwrap_or_else(|| self.tokens.last().map(|token| token.line).unwrap_or(1))
+    }
+
+    fn take_identifier(&mut self) -> Result<String, String> {
+        let line = self.current_line();
+        match self.take_kind() {
+            Some(CodexTokenKind::Identifier(value)) => Ok(value),
+            _ => Err(format!("line {line}: expected an identifier")),
         }
     }
-    values
+
+    fn take_string(&mut self) -> Result<String, String> {
+        let line = self.current_line();
+        match self.take_kind() {
+            Some(CodexTokenKind::String(value)) => Ok(value),
+            _ => Err(format!("line {line}: expected a quoted string")),
+        }
+    }
+
+    fn expect_identifier(&mut self, expected: &str) -> Result<(), String> {
+        let line = self.current_line();
+        match self.take_kind() {
+            Some(CodexTokenKind::Identifier(value)) if value == expected => Ok(()),
+            _ => Err(format!("line {line}: expected {expected}(...)")),
+        }
+    }
+
+    fn expect(&mut self, expected: CodexTokenKind, label: &str) -> Result<(), String> {
+        let line = self.current_line();
+        let found = self.take_kind();
+        if same_token_shape(found.as_ref(), &expected) {
+            Ok(())
+        } else {
+            Err(format!("line {line}: expected {label}"))
+        }
+    }
+
+    fn consume_right_paren(&mut self) -> bool {
+        self.consume(|kind| matches!(kind, CodexTokenKind::RightParen))
+    }
+    fn consume_right_bracket(&mut self) -> bool {
+        self.consume(|kind| matches!(kind, CodexTokenKind::RightBracket))
+    }
+    fn consume(&mut self, matches: impl FnOnce(&CodexTokenKind) -> bool) -> bool {
+        if self.peek().is_some_and(|token| matches(&token.kind)) {
+            self.position += 1;
+            true
+        } else {
+            false
+        }
+    }
+    fn take_kind(&mut self) -> Option<CodexTokenKind> {
+        let token = self.tokens.get(self.position)?.kind.clone();
+        self.position += 1;
+        Some(token)
+    }
+}
+
+fn same_token_shape(found: Option<&CodexTokenKind>, expected: &CodexTokenKind) -> bool {
+    matches!(
+        (found, expected),
+        (Some(CodexTokenKind::LeftParen), CodexTokenKind::LeftParen)
+            | (Some(CodexTokenKind::RightParen), CodexTokenKind::RightParen)
+            | (
+                Some(CodexTokenKind::LeftBracket),
+                CodexTokenKind::LeftBracket
+            )
+            | (
+                Some(CodexTokenKind::RightBracket),
+                CodexTokenKind::RightBracket
+            )
+            | (Some(CodexTokenKind::Comma), CodexTokenKind::Comma)
+            | (Some(CodexTokenKind::Equal), CodexTokenKind::Equal)
+    )
 }
 
 fn push_rule(
@@ -1004,6 +1280,52 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(home).unwrap();
         fs::remove_file(system).unwrap();
+    }
+
+    #[test]
+    fn codex_rules_support_multiline_unions_defaults_and_most_restrictive_decisions() {
+        let root = temp_root();
+        fs::create_dir_all(root.join(".codex/rules")).unwrap();
+        fs::write(
+            root.join(".codex/rules/default.rules"),
+            r#"
+prefix_rule(
+  pattern = ["git", ["push", "status"]],
+  decision = "prompt",
+)
+prefix_rule(pattern = ["git", "push"], decision = "forbidden")
+prefix_rule(pattern = ["git", "push"], decision = "allow")
+prefix_rule(pattern = ["cargo", "test"])
+"#,
+        )
+        .unwrap();
+        let report = inspect_with_options(
+            &root,
+            InspectOptions {
+                include_global: false,
+                codex_trust: CodexTrust::Trusted,
+                ..InspectOptions::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(report.counts.effective, 3);
+        assert_eq!(report.counts.shadowed, 2);
+        assert!(report.rules.iter().any(|rule| {
+            rule.target == "command:git push"
+                && rule.effect == Effect::Deny
+                && rule.status == RuleStatus::Effective
+        }));
+        assert!(report.rules.iter().any(|rule| {
+            rule.target == "command:git status"
+                && rule.effect == Effect::Ask
+                && rule.status == RuleStatus::Effective
+        }));
+        assert!(report.rules.iter().any(|rule| {
+            rule.target == "command:cargo test"
+                && rule.effect == Effect::Allow
+                && rule.status == RuleStatus::Effective
+        }));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

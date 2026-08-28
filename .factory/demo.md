@@ -11,7 +11,7 @@
 
 `examples/sample-repo/` contains two Claude Code settings files, one Codex config, and one Codex rules file. The rules include a repo allow blocked by a worktree deny. The browser demo treats its bundled Codex project as trusted.
 
-The CLI copies these bundled files to a new operating-system temporary directory. It prints that directory before it exits. It does not inspect the caller's repository during a demo run.
+The CLI copies these bundled files to a new operating-system temporary directory. It prints that directory before it exits. It does not inspect the caller's repository during a demo run. A supplied `--output` name must be relative and is resolved inside that directory, never in the caller directory.
 
 ## Reset and isolation
 

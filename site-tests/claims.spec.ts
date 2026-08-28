@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { linkSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -76,9 +76,13 @@ test("demo changes nothing in the caller directory", { tag: "@claim:demo-isolate
   try {
     writeFileSync(join(caller, "keep.txt"), "unchanged");
     const binary = resolve(process.cwd(), process.platform === "win32" ? "target/debug/permit-map.exe" : "target/debug/permit-map");
-    const result = spawnSync(binary, ["demo", "--json"], { cwd: caller, encoding: "utf8" });
+    const result = spawnSync(binary, ["demo", "--format", "markdown", "--output", "report.md"], { cwd: caller, encoding: "utf8" });
     expect(result.status).toBe(0);
+    expect(result.stderr).toContain("Nothing outside this temporary directory was read or changed");
     expect(readFileSync(join(caller, "keep.txt"), "utf8")).toBe("unchanged");
+    expect(spawnSync(binary, ["demo", "--output", join(caller, "escape.md")], { cwd: caller, encoding: "utf8" }).status).toBe(2);
+    expect(readFileSync(join(caller, "keep.txt"), "utf8")).toBe("unchanged");
+    expect(() => readFileSync(join(caller, "report.md"), "utf8")).toThrow();
   } finally {
     rmSync(caller, { recursive: true, force: true });
   }
@@ -120,6 +124,27 @@ test("Codex project policy is unresolved without trust and layered when trusted"
   }
 });
 
+test("Codex command rules parse documented forms and keep the most restrictive match", { tag: "@claim:codex-rules" }, () => {
+  const root = mkdtempSync(join(tmpdir(), "permit-map-codex-rules-"));
+  try {
+    mkdirSync(join(root, ".codex/rules"), { recursive: true });
+    writeFileSync(join(root, ".codex/rules/default.rules"), `prefix_rule(
+  pattern = ["git", ["push", "status"]],
+  decision = "prompt",
+)
+prefix_rule(pattern = ["git", "push"], decision = "forbidden")
+prefix_rule(pattern = ["git", "push"], decision = "allow")
+prefix_rule(pattern = ["cargo", "test"])
+`);
+    const report = JSON.parse(execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--codex-trust", "trusted", "--format", "json"], { encoding: "utf8" }));
+    expect(report.rules.find((rule: { target: string; status: string }) => rule.target === "command:git push" && rule.status === "effective")).toMatchObject({ effect: "deny" });
+    expect(report.rules.find((rule: { target: string; status: string }) => rule.target === "command:git status" && rule.status === "effective")).toMatchObject({ effect: "ask" });
+    expect(report.rules.find((rule: { target: string; status: string }) => rule.target === "command:cargo test" && rule.status === "effective")).toMatchObject({ effect: "allow" });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("report output cannot replace a discovered vendor policy", { tag: "@claim:vendor-policy-safe" }, () => {
   const root = mkdtempSync(join(tmpdir(), "permit-map-output-"));
   try {
@@ -128,6 +153,10 @@ test("report output cannot replace a discovered vendor policy", { tag: "@claim:v
     const original = '{"permissions":{"deny":["Bash(git push:*)"]}}';
     writeFileSync(policy, original);
     expect(() => execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--output", policy])).toThrow();
+    expect(readFileSync(policy, "utf8")).toBe(original);
+    const alias = join(root, "report.md");
+    linkSync(policy, alias);
+    expect(() => execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--output", alias])).toThrow();
     expect(readFileSync(policy, "utf8")).toBe(original);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -141,6 +170,14 @@ test("bad paths and malformed supported policies exit with code 2", { tag: "@cla
     mkdirSync(join(root, ".claude"));
     writeFileSync(join(root, ".claude", "settings.json"), "not json");
     expect(spawnSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global"]).status).toBe(2);
+    const codexRoot = mkdtempSync(join(tmpdir(), "permit-map-rules-errors-"));
+    try {
+      mkdirSync(join(codexRoot, ".codex/rules"), { recursive: true });
+      writeFileSync(join(codexRoot, ".codex/rules/default.rules"), 'prefix_rule(pattern = ["git"], decision = "forbidden"');
+      expect(spawnSync("cargo", ["run", "--quiet", "--", "inspect", codexRoot, "--no-global"]).status).toBe(2);
+    } finally {
+      rmSync(codexRoot, { recursive: true, force: true });
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

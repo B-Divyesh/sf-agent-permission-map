@@ -11,7 +11,7 @@ One-click sample: <https://agent-permission-map.sociobot.in/demo>
 
 ## Try the sandbox
 
-The demo command copies the bundled sample policies into a new temporary directory. It does not inspect the current repository.
+The demo command copies the bundled sample policies into a new temporary directory. It does not inspect the current repository. A demo `--output` path must be relative and is written inside that temporary directory.
 
 ```sh
 cargo run -- demo
@@ -54,7 +54,7 @@ permit-map inspect . --format json
 permit-map inspect . --json
 ```
 
-Successful reports exit with code `0`. Missing paths, unreadable files, and malformed supported files exit with code `2` and an actionable error.
+Successful reports exit with code `0`. Missing paths, unreadable files, and malformed supported files exit with code `2` and an actionable error. For safety, `--output` creates a new report file and refuses known policy paths and their filesystem aliases.
 
 ## Supported policy paths
 
@@ -70,14 +70,14 @@ Permit Map opens these paths automatically:
 | Codex | Profile | `~/.codex/<profile>.config.toml` when passed with `--codex-profile` |
 | Codex | Project | Every `.codex/config.toml` and `.codex/rules/*.rules` from the project root to the inspected directory |
 
-The Claude adapter reads `permissions.allow`, `permissions.ask`, and `permissions.deny`. The Codex adapter reads `sandbox_mode`, `approval_policy`, and `prefix_rule` entries with allow, prompt, or forbidden decisions. It never treats the undocumented `config.local.toml` path as Codex configuration.
+The Claude adapter reads `permissions.allow`, `permissions.ask`, and documented multiline `prefix_rule` entries. Rules accept string prefixes and union lists; an omitted decision defaults to `allow`. It never treats the undocumented `config.local.toml` path as Codex configuration.
 
 ## Resolution rules
 
 Permit Map uses vendor-specific, explicit rules:
 
 1. Claude exact matches resolve deny, then ask, then allow across every discovered scope.
-2. Codex resolves system, user, selected profile, and trusted project files from the root to the inspected directory. The closest project file wins.
+2. Codex command rules resolve exact prefixes as forbidden, then prompt, then allow. Codex sandbox and approval controls resolve system, user, selected profile, and trusted project files from the root to the inspected directory; the closest control wins.
 3. Codex project rows stay `unresolved` until you state `--codex-trust trusted` or `--codex-trust untrusted`.
 4. Pass `--codex-profile NAME` and repeat `--codex-config key=value` for context supplied to the Codex invocation.
 5. Different vendors never shadow one another.

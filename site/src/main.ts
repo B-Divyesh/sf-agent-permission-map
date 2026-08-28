@@ -90,7 +90,7 @@ function home(): string {
     <section class="steps shell" aria-labelledby="steps-title"><p class="eyebrow">Working timetable · line 03</p><h2 id="steps-title">Inspect a repository in three steps</h2>
       <ol><li><span>01</span><div><h3>Point at a repository</h3><p>Permit Map checks documented Claude Code and Codex policy paths.</p></div></li><li><span>02</span><div><h3>Check the decision context</h3><p>Claude denies win. Codex project rules need the trust context.</p></div></li><li><span>03</span><div><h3>Share the result</h3><p>Print a table or write JSON and Markdown for review.</p></div></li></ol>
     </section>
-    <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><p class="eyebrow light">Depart from your terminal</p><h2 id="install-title">Install the single binary</h2><p>Build from source with a current Rust toolchain.</p></div><div class="command"><code>cargo install --path .</code><button type="button" data-copy="cargo install --path .">Copy command</button></div></div></section>
+    <section id="install" class="install-band" aria-labelledby="install-title"><div class="shell install-grid"><div><p class="eyebrow light">Depart from your terminal</p><h2 id="install-title" tabindex="-1">Install the single binary</h2><p>Build from source with a current Rust toolchain.</p></div><div class="command"><code>cargo install --path .</code><button type="button" data-copy="cargo install --path .">Copy command</button></div></div></section>
     <section class="limits shell" aria-labelledby="limits-title"><div><p class="eyebrow">Clear boundaries · line 04</p><h2 id="limits-title">What Permit Map does not do</h2></div><ul><li>It does not run an agent.</li><li>It does not change vendor settings.</li><li>It does not read source files or credential stores.</li><li>It does not guess when vendor patterns overlap.</li></ul></section>
   </main>${footer()}`;
 }
@@ -154,8 +154,11 @@ function navigate(url: URL): void {
   history.pushState({ scrollY: 0, focusId: null }, "", `${url.pathname}${url.hash}`);
   render(url.pathname);
   requestAnimationFrame(() => {
-    if (url.hash) document.querySelector(url.hash)?.scrollIntoView();
-    else { window.scrollTo(0, 0); document.querySelector<HTMLElement>("h1")?.focus(); }
+    if (url.hash) {
+      const target = document.querySelector<HTMLElement>(url.hash);
+      target?.scrollIntoView();
+      (target?.querySelector<HTMLElement>("h1, h2, h3, h4, h5, h6, [tabindex]") ?? target ?? document.querySelector<HTMLElement>("h1"))?.focus();
+    } else { window.scrollTo(0, 0); document.querySelector<HTMLElement>("h1")?.focus(); }
   });
 }
 

@@ -41,6 +41,15 @@ test("keyboard can enter the demo and reset it", async ({ page }) => {
   await expect(page.getByText(/Sample reset/)).toBeVisible();
 });
 
+test("keyboard start-for-real moves focus to the install destination", async ({ page }) => {
+  await page.goto("/demo");
+  const start = page.getByRole("link", { name: "Start for real" });
+  await start.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/#install$/);
+  await expect(page.getByRole("heading", { name: "Install the single binary" })).toBeFocused();
+});
+
 test("all local page links return content", async ({ page, request }) => {
   await page.goto("/");
   const paths = await page.locator("a[href]").evaluateAll(links => [...new Set(links.map(link => new URL((link as HTMLAnchorElement).href).pathname).filter(path => path !== "/"))]);

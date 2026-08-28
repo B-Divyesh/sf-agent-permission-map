@@ -1,8 +1,8 @@
 # Permit Map repair handoff
 
-Work order: `agent-permission-map-repair-3`  
-Repair implementation: `c0756676daa94d7bbe4ff3995b40fdc92b7ee456`  
-Base verifier report: `3d489e954ce2182fbd0905183041fa641e722402` / `.factory/verification-3.md`  
+Work order: `agent-permission-map-repair-3`
+Repair implementation: `c0756676daa94d7bbe4ff3995b40fdc92b7ee456`
+Base verifier report: `3d489e954ce2182fbd0905183041fa641e722402` / `.factory/verification-3.md`
 Artifact and deployment class: Rust CLI plus static Vite site (`dist/site`)
 
 ## Result

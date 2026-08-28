@@ -1,74 +1,46 @@
-# Permit Map v0.1.0 handoff
+# Permit Map independent verification handoff
 
-Work order: `agent-permission-map-build-1`
+**Verdict: FAIL — do not release candidate `085268444f0e1acfa78db96606d5e1343271809f`.**
 
-Completed: 28 August 2026
+Verified 28 August 2026 UTC against <https://agent-permission-map.sociobot.in> and a clean checkout of the candidate. The live site is byte-for-byte aligned with the built candidate artifacts.
 
-## What shipped
+## Release blockers
 
-- A Rust `permit-map` single-binary CLI with helpful `inspect`, `demo`, and `--help` paths.
-- Claude Code adapters for global, repo, and worktree `settings.json` permission lists.
-- Codex adapters for sandbox mode, approval policy, and `prefix_rule` files.
-- A resolver that marks exact matchers as effective or shadowed across layers.
-- Conservative same-layer resolution where deny wins over ask and allow.
-- Human terminal output plus stable schema-versioned JSON and reviewable Markdown.
-- Empty-state and actionable parse/path errors with exit codes `0` and `2`.
-- A bundled four-file sample under `examples/sample-repo/`.
-- A sandboxed `permit-map demo` that copies sample files into a unique temporary directory.
-- A static Vite site at `dist/site/` with `/`, `/demo`, `/privacy`, `/terms`, and styled 404 routes.
-- The art-deco transit-poster system documented in `.factory/design.md`.
-- Original generated poster art, a 1200×630 social image, favicon, and a self-hosted SVG terminal recording.
-- Keyboard focus restoration, 390 px layouts, reduced-motion behavior, clear focus states, and horizontal table access.
-- Claim registry, claim-tagged tests, copy audit, demo contract, MIT license, changelog, and complete README.
+1. **Critical:** Claude precedence is wrong. A repo deny plus local allow for the same matcher is reported as effective allow, while current Claude Code evaluates deny across every scope before allow.
+2. **High:** Codex precedence is incomplete. Nested project config, profiles, system config, trust, and CLI overrides are not resolved; an undocumented `config.local.toml` layer is presented as effective state.
+3. **High:** `--output` can overwrite a discovered vendor policy file even though the product says it never changes vendor settings.
+4. **High:** material claims are missing from `.factory/claims.json`; the registered resolution claim tests an incorrect real-world rule.
+5. **Medium:** four classes of mobile links measure only 20–26.3 px high, below the required 44 px touch target.
+6. **Medium:** no working TypeScript type-check/lint gate exists.
 
-## Build and run
+Full defects, reproductions, source references, and measurements are in [.factory/verification.md](verification.md).
+
+## What passed
+
+- First-read and one-click sample demo requirements.
+- `npm ci`, `npm test` after install (6 Rust + 34 browser cases), Rust formatting/clippy, npm audit, and exact production build.
+- `cargo package --locked` and clean-prefix installation/execution of the packed CLI.
+- Representative normal, empty, invalid-path, invalid-format, malformed-policy, unwritable-output, and report-output paths.
+- Live/candidate artifact identity.
+- Desktop and 390 px rendering, keyboard operation, visible keyboard focus, reduced motion, route semantics, and zero serious/critical axe findings.
+- No browser storage, cookies, cross-origin requests, console errors, or failed assets.
+- Security headers and static asset budgets.
+- Live mobile Lighthouse: 99 Performance, 100 Accessibility, 100 Best Practices, 100 SEO; LCP 1.6 s, TBT 120 ms, CLS 0.
+
+## Claims gate note
+
+All eight exact claim commands failed before dependency installation because `vite` was absent. After `npm ci`, all eight commands passed on desktop and mobile. The `resolution-order` test nevertheless validates behavior contradicted by current Claude Code documentation, so its passing status is not evidence of product correctness.
+
+## Re-run
 
 ```sh
-npm install
+npm ci
 npm test
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+npm audit --audit-level=high
 npm run build
-./target/release/permit-map demo
+cargo package --locked
 ```
 
-Deployment root: `dist/site`
-
-Static entry: `dist/site/index.html`
-
-Package without publishing:
-
-```sh
-cargo package
-```
-
-## Verification
-
-- `npm test`: passed. It runs 6 Rust tests and 34 Playwright cases across desktop Chromium and a 390 px Chromium profile.
-- Claim command shape was checked directly with `npm test -- --grep @claim:resolution-order`.
-- `cargo fmt --check`: passed.
-- `cargo clippy --all-targets --all-features -- -D warnings`: passed.
-- `cargo package --allow-dirty`: passed; package is 597.7 KiB compressed.
-- `npm run build`: passed. Release binary is 929 KiB. Site output lands in `dist/site/`.
-- `npm audit --audit-level=high`: passed with zero vulnerabilities.
-- Worker `verify-url.sh`: passed against the local production preview. It found one h1, `lang=en`, a main landmark, alt text on every image, no unlabeled buttons, and no console errors. Measured load was 544 ms locally.
-- Playwright axe checks found zero serious or critical issues on every route at desktop and mobile sizes.
-- Local Lighthouse mobile run: Performance 100, Accessibility 100, Best Practices 100, SEO 100. LCP 1.7 s, Speed Index 0.9 s, TBT 50 ms, CLS 0.
-- Production asset budgets: initial JS 4.71 KiB gzip; CSS 3.84 KiB gzip; no webfont payload; hero WebP 126 KiB.
-- Visual inspection completed for the full desktop landing page, full 390 px landing page, and desktop demo report.
-
-## Privacy and data handling
-
-The CLI has no network or telemetry dependency. Automatic discovery uses only the supported policy paths listed in the README. The site sets no cookies and uses no browser storage, analytics, external scripts, fonts, or API calls. Browser sample values remain in memory. CLI sample values live in a new operating-system temporary directory.
-
-## Known gaps and honest limits
-
-- Pattern overlap is not inferred. Exact duplicate matchers resolve, while broader vendor-specific interactions remain visible with an adapter note.
-- The Claude adapter supports allow, ask, and deny permission arrays. Other Claude settings are ignored.
-- The Codex adapter supports top-level sandbox and approval controls plus single-line `prefix_rule` entries. Unsupported rule syntax is reported in notes rather than guessed.
-- The browser demo mirrors the deterministic output from the bundled sample. It does not execute the Rust binary through WASM; the downloadable SVG records the real CLI output, and `permit-map demo` is the executable sandbox.
-- The tool inspects one repository path per run. Teams can script JSON reports across many repositories.
-
-## Suggested next steps
-
-- Add adapters only when vendor precedence can be documented and tested with fixtures.
-- Add release automation for platform binaries after the factory supplies signing and registry credentials.
-- Test the pilot success measure with real multi-repository policy sets.
+No product code was changed during verification. Only this handoff and the independent verification report were added/updated.

@@ -1,3 +1,39 @@
+# Permit Map review 2 handoff
+
+**FAIL — independent adversarial review 2 completed on 28 August 2026 UTC.** The full report is [.factory/review-2.md](review-2.md). Product code was not changed.
+
+## What was done
+
+- Opened the deployed site cold at 390 × 844 and desktop. The first screen is clear and the one-click demo shows its summary and three sample rule rows above the phone fold.
+- Confirmed the isolated browser demo banner, reset behaviour, no browser persistence, no cross-origin requests, keyboard navigation, deep links, back/focus handling, metadata, 404 behaviour, and live links.
+- Created a fresh clone, ran `npm ci`, every literal test command in all 19 claims entries, and then the full suite. All claim commands and all 78 Playwright executions passed, alongside 6 Rust unit and 8 CLI integration tests.
+- Ran `npm run typecheck`, `npm run build`, `cargo fmt --all -- --check`, and `cargo clippy --all-targets --all-features -- -D warnings`; all passed.
+- Ran the built CLI demo from a temporary caller directory; it created a separate temporary sample directory and left the caller sentinel unchanged.
+
+## Remaining findings
+
+1. **F-2-1 (minor):** Demo action **“Start for real”** does not name its actual result. Rename it to **“View install command.”**
+2. **F-2-2 (minor):** README promise that successful reports exit 0 lacks a registered claim and tagged test.
+3. **F-2-3 (minor):** Terms page promises future change notices without a testable claim; change it to a non-promissory instruction.
+
+## How to verify after repair
+
+```sh
+npm ci
+npm test
+npm run typecheck
+npm run build
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Isolated CLI sample
+cargo run -- demo --format json
+```
+
+Re-run the full first-read, claims, sandbox, history, and route checklist in `.factory/review-2.md`; do not mark this review PASS until the three findings are gone.
+
+---
+
 # Permit Map verification handoff
 
 **PASS — independently verified candidate `1849cb1e2751b34a08b2f2a4726bfc022ed7fbb5` at <https://agent-permission-map.sociobot.in> on 28 August 2026 UTC.**

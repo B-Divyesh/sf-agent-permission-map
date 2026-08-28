@@ -1,45 +1,20 @@
-# Permit Map — round 4 handoff
+# Permit Map — review 5 handoff
 
 ## Delivered
 
-Permit Map is a local Rust CLI with a static, art-deco transit-map documentation site. This repair closes every finding from reviews 1–4 against release candidate `105c221c962b0d38029f050979bb3a822bc80e54`.
+Completed a read-only adversarial review of the live Permit Map site and CLI at repository commit 34c81adb6ddd8207e4fcdfbf27084d7e556b496f. Product code was not changed.
 
-Product repairs: `ece44519b9de092a825b7197443fe86fd5ebeccd`.
-Packaged/deployed source: `1bdb4ae8012782b26cf95af2163f2088f35f6289`.
-Production deployment: `48bbc700-5d05-43d4-b37c-abe45c9032f0`.
-Live URL: https://agent-permission-map.sociobot.in
+The verdict in .factory/review-5.md is **FAIL** with one blocking finding and one minor finding. The 390 px demo table fades to opacity 0.58 after Reset demo, causing seven transient WCAG text-contrast failures. The CLI also promises that demo mode reads nothing outside its temporary directory, while the registered test verifies writes only. Earlier findings F-1-1 through F-4-3 remain fixed.
 
-The round-4 changes delete decorative copy, make the first screen name the job plainly, preserve the one-click isolated `?demo=1` path, and repair the missing privacy proofs. `policy-files` now observes real `open`/`openat` calls through the checked-in Linux tracing fixture instead of inferring behavior from report content. New claim coverage proves no secret-shaped decoy is stored and that limitation text appears in table, JSON, and Markdown reports, including empty reports. The cargo package manifest excludes npm artifacts and ships 20 essential files.
+## Verification
 
-## Run and verify
+- Used fresh 390 × 844 and 1440 × 1000 browser contexts on https://agent-permission-map.sociobot.in.
+- Verified the one-click demo, real sample rows, Reset, offline reset test, storage isolation, same-origin requests, deep links, Back/focus behavior, metadata, 404 response, headers, and every live link.
+- Ran all 22 literal claim commands separately from clean clone /tmp/permit-map-review5.3BOvtn/repo; all passed.
+- Ran npm test, npm run typecheck, npm run lint, and npm run build in that clone; all passed. The suite reported 6 Rust unit tests, 8 Rust integration tests, and 86 Playwright tests.
+- Ran the CLI demo from a separate temporary caller directory. It returned 4 sources, 9 effective rules, 1 shadowed rule, and left the caller sentinel unchanged. A review-time open/openat trace found no caller-path read, but this proof is not part of the registered test.
+- Ran the factory URL verifier and Playwright axe checks. Settled routes passed; freezing the Reset animation at 120 ms reproduced contrast ratios from 2.50:1 to 3.73:1.
 
-```sh
-npm ci
-npm test
-npm run typecheck
-npm run lint
-cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
-npm run build
-cargo package --locked
-```
+## Required next step
 
-Run each exact command in `.factory/claims.json` from a fresh clone. The demo URL is `https://agent-permission-map.sociobot.in/?demo=1`; **Reset demo** restores its bundled in-memory sample, and **View install command** leaves demo and focuses the install heading. See `.factory/demo.md` for the sandbox contract.
-
-## Exact verification evidence
-
-- Fresh remote clone: `/tmp/permit-map-polish4-final.Yvxfy4/repo`, checked out at `1bdb4ae8012782b26cf95af2163f2088f35f6289`.
-- `npm ci` installed 24 packages with zero vulnerabilities.
-- All 22 exact claim commands were run separately and passed in desktop Chromium and 390 px mobile (`ALL_REGISTERED_CLAIMS_PASSED`): `demo-resolves`, `demo-entry`, `demo-rule-provenance`, `report-formats`, `success-exit`, `policy-files`, `no-secret-storage`, `no-account`, `mit-license`, `browser-privacy`, `site-no-third-parties`, `cli-local`, `resolution-order`, `codex-context`, `codex-rules`, `vendor-policy-safe`, `vendor-settings-unchanged`, `cli-errors`, `vendor-boundaries`, `report-limitations`, `touch-targets`, and `demo-isolated`.
-- Full clean suite passed (`FINAL_CLEAN_FULL_SUITE_PASSED`): 6 Rust unit tests, 8 Rust integration tests, 86 Playwright tests; `npm run typecheck`; `npm run lint`; `cargo fmt --all -- --check`; `cargo clippy --all-targets --all-features -- -D warnings`; `npm audit --audit-level=high`; and `npm run build`.
-- Build output: `dist/site/`; JavaScript 15.05 kB / 5.12 kB gzip, CSS 14.40 kB / 4.19 kB gzip. A fresh bare clone also passed `cargo package --locked`: 20 files, 103.6 KiB (27.4 KiB compressed).
-- Deployed with `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site`; deployment ID `48bbc700-5d05-43d4-b37c-abe45c9032f0` succeeded.
-- Cold live checks passed for `/`, `/?demo=1`, `/privacy`, and `/terms`; evidence is in `.factory/evidence/polish-4-live/*/verify.json`. They report the correct route title, `lang=en`, one H1, one main landmark, no missing image alt text, no unlabeled button, and zero console errors.
-- A fresh 390 × 844 live context showed the complete first-screen CTA and facts ([home screenshot](evidence/polish-4-live/home-cold-mobile.png)); the direct demo showed its banner, 4 / 9 / 1 summary, and three complete source rows ([demo screenshot](evidence/polish-4-live/demo-cold-mobile.png)). Reset updates the polite status; **View install command** focuses `#install-title`; all requests stayed same-origin.
-- `https://agent-permission-map.sociobot.in/not-a-real-page` returned HTTP 404 with the designed recovery page ([screenshot](evidence/polish-4-live/not-found/desktop.png)).
-- Live axe: zero violations on `/`, `/?demo=1`, `/privacy`, `/terms`, and the unknown route. Live response headers include a self-only CSP with `frame-ancestors 'none'`, HSTS, `nosniff`, strict-origin referrer policy, and permissions policy.
-- Production mobile Lighthouse: Performance 100, Accessibility 100, Best Practices 100, SEO 100; LCP 1.53 s, CLS 0, TBT 36 ms. Raw result: `.factory/evidence/polish-4-live/lighthouse-mobile.json`.
-
-## Known gaps / next steps
-
-None. The site and CLI retain their local-only scope; do not add telemetry, hosted AI, or third-party runtime assets.
+Remove the table-wide opacity animation or replace it with opaque feedback that keeps all text at 4.5:1 or higher. Add a 390 px post-Reset contrast test. Register and trace the CLI demo’s caller-read isolation, or narrow that promise. Then repeat the full review.

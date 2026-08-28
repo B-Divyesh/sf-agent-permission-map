@@ -23,7 +23,7 @@ test("navigation uses real URLs and restores focus", async ({ page }) => {
   await expect(page.locator("h1")).toBeFocused();
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.locator("h1")).toBeFocused();
+  await expect(page.getByRole("link", { name: /Try it with sample data/ })).toBeFocused();
 });
 
 test("keyboard can enter the demo and reset it", async ({ page }) => {

@@ -47,5 +47,12 @@
     "where": "privacy page and README",
     "test": "npm test -- --grep @claim:cli-local",
     "sandbox": "clean repository checkout; inspect runtime dependencies and Rust source for network clients"
+  },
+  {
+    "id": "resolution-order",
+    "claim": "Exact worktree matchers replace repo and global matchers; deny wins at the same layer.",
+    "where": "landing steps, demo notes, reports, and README",
+    "test": "npm test -- --grep @claim:resolution-order",
+    "sandbox": "temporary repository with duplicate exact matchers across and within layers"
   }
 ]

@@ -67,3 +67,20 @@ test("CLI source has no network or telemetry client", { tag: "@claim:cli-local" 
   expect(cargo).not.toMatch(/reqwest|hyper|ureq|telemetry|analytics/);
   expect(source).not.toMatch(/TcpStream|UdpSocket|https?:\/\/|telemetry|analytics/);
 });
+
+test("resolver applies the documented layer and deny precedence", { tag: "@claim:resolution-order" }, () => {
+  const root = mkdtempSync(join(tmpdir(), "permit-map-order-"));
+  try {
+    mkdirSync(join(root, ".claude"));
+    writeFileSync(join(root, ".claude", "settings.json"), '{"permissions":{"allow":["Bash(git status:*)","Read(src/**)"],"deny":["Read(src/**)"]}}');
+    writeFileSync(join(root, ".claude", "settings.local.json"), '{"permissions":{"deny":["Bash(git status:*)"]}}');
+    const output = execFileSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global", "--format", "json"], { encoding: "utf8" });
+    const report = JSON.parse(output);
+    const gitRules = report.rules.filter((rule: { target: string }) => rule.target === "Bash(git status:*)");
+    const readRules = report.rules.filter((rule: { target: string }) => rule.target === "Read(src/**)");
+    expect(gitRules.find((rule: { status: string }) => rule.status === "effective")).toMatchObject({ layer: "worktree", effect: "deny" });
+    expect(readRules.find((rule: { status: string }) => rule.status === "effective")).toMatchObject({ layer: "repo", effect: "deny" });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

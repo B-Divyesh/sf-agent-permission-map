@@ -146,23 +146,21 @@ pub fn inspect(root: &Path, include_global: bool) -> Result<Report, String> {
     let root =
         fs::canonicalize(root).map_err(|e| format!("Cannot open {}: {e}", root.display()))?;
     let mut candidates: Vec<(String, Layer, PathBuf)> = Vec::new();
-    if include_global {
-        if let Some(home) = std::env::var_os("HOME") {
-            let home = PathBuf::from(home);
-            candidates.extend([
-                (
-                    "claude".into(),
-                    Layer::Global,
-                    home.join(".claude/settings.json"),
-                ),
-                (
-                    "codex".into(),
-                    Layer::Global,
-                    home.join(".codex/config.toml"),
-                ),
-            ]);
-            candidates.extend(rule_files(&home.join(".codex/rules"), Layer::Global));
-        }
+    if let (true, Some(home)) = (include_global, std::env::var_os("HOME")) {
+        let home = PathBuf::from(home);
+        candidates.extend([
+            (
+                "claude".into(),
+                Layer::Global,
+                home.join(".claude/settings.json"),
+            ),
+            (
+                "codex".into(),
+                Layer::Global,
+                home.join(".codex/config.toml"),
+            ),
+        ]);
+        candidates.extend(rule_files(&home.join(".codex/rules"), Layer::Global));
     }
     candidates.extend([
         (

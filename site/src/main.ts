@@ -75,7 +75,7 @@ function home(): string {
         <p class="eyebrow">Local policy inspector · line 01</p>
         <h1 id="home-title" tabindex="-1">See agent permissions before they run</h1>
         <p class="lede">For engineers using several coding agents, Permit Map resolves the rules each repository will apply.</p>
-        <div class="primary-row"><a class="ticket primary" href="/demo" data-link>Try it with sample data <span aria-hidden="true">→</span></a><p>Opens a browser preview of the bundled repository.</p></div>
+        <div class="primary-row"><a id="demo-cta" class="ticket primary" href="/demo" data-link>Try it with sample data <span aria-hidden="true">→</span></a><p>Opens a browser preview of the bundled repository.</p></div>
         <ul class="plain-facts"><li>Reads known policy files only.</li><li>Runs without an account.</li><li>Free under the MIT license.</li></ul>
       </div>
       <div class="hero-art">
@@ -149,7 +149,9 @@ function render(path = window.location.pathname): void {
 }
 
 function navigate(url: URL): void {
-  history.pushState({}, "", `${url.pathname}${url.hash}`);
+  const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  history.replaceState({ scrollY: window.scrollY, focusId: active?.id || null }, "", window.location.href);
+  history.pushState({ scrollY: 0, focusId: null }, "", `${url.pathname}${url.hash}`);
   render(url.pathname);
   requestAnimationFrame(() => {
     if (url.hash) document.querySelector(url.hash)?.scrollIntoView();
@@ -177,5 +179,13 @@ function bindActions(): void {
   });
 }
 
-window.addEventListener("popstate", () => { render(); document.querySelector<HTMLElement>("h1")?.focus(); });
+history.replaceState({ scrollY: window.scrollY, focusId: null }, "", window.location.href);
+window.addEventListener("popstate", event => {
+  render();
+  requestAnimationFrame(() => {
+    window.scrollTo(0, event.state?.scrollY ?? 0);
+    const previous = event.state?.focusId ? document.getElementById(event.state.focusId) : null;
+    (previous ?? document.querySelector<HTMLElement>("h1"))?.focus();
+  });
+});
 render();

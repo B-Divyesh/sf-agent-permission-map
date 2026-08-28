@@ -65,6 +65,40 @@ test("the in-memory demo resets after the browser goes offline", async ({ page, 
   await expect(page.locator("#full-rule-table tbody tr")).toHaveCount(10);
 });
 
+test("Reset demo keeps every visible phone table text treatment at 4.5:1 during feedback", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/?demo=1");
+  await page.getByRole("button", { name: "Reset demo" }).click();
+  await page.waitForTimeout(120);
+  await expect(page.locator(".first-screen-table")).toHaveClass(/reset-pulse/);
+  const axe = await new AxeBuilder({ page: page as never }).analyze();
+  expect(axe.violations.filter(item => item.id === "color-contrast")).toEqual([]);
+
+  const treatments = await page.locator(".first-screen-table").evaluate(table => {
+    const style = (selector: string) => getComputedStyle(table.querySelector<HTMLElement>(selector)!);
+    const tableStyle = getComputedStyle(table);
+    const opacity = [] as string[];
+    for (let node: Element | null = table; node; node = node.parentElement) opacity.push(getComputedStyle(node).opacity);
+    return {
+      opacity,
+      treatments: [
+        { name: "caption", foreground: style("caption").color, background: style("caption").backgroundColor },
+        { name: "headers", foreground: style("th").color, background: style("th").backgroundColor },
+        { name: "body cells", foreground: style("td").color, background: tableStyle.backgroundColor },
+        ...[...table.querySelectorAll<HTMLElement>(".decision")].map(node => ({
+          name: `${node.textContent?.trim()} badge`, foreground: getComputedStyle(node).color, background: getComputedStyle(node).backgroundColor,
+        })),
+      ],
+    };
+  });
+
+  expect(treatments.opacity).toEqual(expect.arrayContaining(["1"]));
+  expect(treatments.opacity.every(value => value === "1"), "Reset feedback must not fade table text").toBeTruthy();
+  for (const treatment of treatments.treatments) {
+    expect(contrastRatio(treatment.foreground, treatment.background), treatment.name).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
 test("keyboard install action moves focus to the install destination", async ({ page }) => {
   await page.goto("/demo");
   const start = page.getByRole("link", { name: "View install command" });

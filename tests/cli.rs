@@ -22,7 +22,7 @@ fn demo_runs_without_setup() {
         .stdout(predicate::str::contains("\"shadowed\": 1"))
         .stdout(predicate::str::contains("Read(.env*)"))
         .stderr(predicate::str::contains(
-            "Nothing outside this temporary directory was read or changed",
+            "The demo does not read the caller directory or change anything outside its temporary directory",
         ));
 }
 
@@ -158,7 +158,7 @@ fn demo_output_stays_inside_its_temporary_directory() {
         .success()
         .stdout(predicate::str::contains("Wrote"))
         .stderr(predicate::str::contains(
-            "Nothing outside this temporary directory was read or changed",
+            "The demo does not read the caller directory or change anything outside its temporary directory",
         ));
     assert_eq!(std::fs::read_to_string(sentinel).unwrap(), "unchanged");
     assert!(!caller.join("report.md").exists());

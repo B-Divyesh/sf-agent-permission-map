@@ -185,20 +185,38 @@ test("CLI does not launch agents and has no network or telemetry client", { tag:
   expect(source).not.toMatch(/TcpStream|UdpSocket|https?:\/\/|telemetry|analytics|Command::new/);
 });
 
-test("demo changes nothing in the caller directory", { tag: "@claim:demo-isolated" }, () => {
+test("demo never reads caller data or changes caller files", { tag: "@claim:demo-isolated" }, () => {
+  expect(process.platform, "the syscall-level demo isolation proof runs on the Linux release target").toBe("linux");
   const caller = mkdtempSync(join(tmpdir(), "permit-map-caller-"));
+  const tracing = mkdtempSync(join(tmpdir(), "permit-map-demo-trace-"));
   try {
     writeFileSync(join(caller, "keep.txt"), "unchanged");
+    mkdirSync(join(caller, ".claude"));
+    writeFileSync(join(caller, ".claude", "settings.json"), '{"permissions":{"deny":["Bash(real caller data)"]}}');
+    writeFileSync(join(caller, ".env"), "CALLER_SECRET=must-not-be-read");
     const binary = resolve(process.cwd(), process.platform === "win32" ? "target/debug/permit-map.exe" : "target/debug/permit-map");
-    const result = spawnSync(binary, ["demo", "--format", "markdown", "--output", "report.md"], { cwd: caller, encoding: "utf8" });
+    const shim = join(tracing, "permit-map-open-trace.so");
+    const trace = join(tracing, "opened-paths.log");
+    execFileSync("cc", ["-shared", "-fPIC", "site-tests/open-trace.c", "-o", shim], { encoding: "utf8" });
+    const result = spawnSync(binary, ["demo", "--format", "markdown", "--output", "report.md"], {
+      cwd: caller,
+      encoding: "utf8",
+      env: { ...process.env, LD_PRELOAD: shim, PERMIT_MAP_OPEN_LOG: trace },
+    });
     expect(result.status).toBe(0);
-    expect(result.stderr).toContain("Nothing outside this temporary directory was read or changed");
+    expect(result.stderr).toContain("The demo does not read the caller directory or change anything outside its temporary directory");
+    const demoRoot = result.stderr.match(/^Demo files: (.+)$/m)?.[1];
+    expect(demoRoot).toBeTruthy();
+    const opened = readFileSync(trace, "utf8").split("\n").filter(Boolean);
+    expect(opened.some(path => path.startsWith(`${demoRoot}/`)), "demo policies should be read from the demo directory").toBeTruthy();
+    expect(opened.filter(path => path === caller || path.startsWith(`${caller}/`)), "no caller path may be opened").toEqual([]);
     expect(readFileSync(join(caller, "keep.txt"), "utf8")).toBe("unchanged");
     expect(spawnSync(binary, ["demo", "--output", join(caller, "escape.md")], { cwd: caller, encoding: "utf8" }).status).toBe(2);
     expect(readFileSync(join(caller, "keep.txt"), "utf8")).toBe("unchanged");
     expect(() => readFileSync(join(caller, "report.md"), "utf8")).toThrow();
   } finally {
     rmSync(caller, { recursive: true, force: true });
+    rmSync(tracing, { recursive: true, force: true });
   }
 });
 

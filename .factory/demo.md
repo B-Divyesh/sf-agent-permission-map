@@ -12,10 +12,10 @@
 
 `examples/sample-repo/` contains two Claude Code settings files, one Codex config, and one Codex rules file. The rules include a repo allow blocked by a worktree deny. The browser demo treats its bundled Codex project as trusted.
 
-The CLI copies these bundled files to a new operating-system temporary directory. It prints that directory before it exits. It does not inspect the caller's repository during a demo run. A supplied `--output` name must be relative and is resolved inside that directory, never in the caller directory.
+The CLI copies these bundled files to a new operating-system temporary directory. It prints that directory before it exits. It does not read the caller's repository during a demo run. A supplied `--output` name stays inside that directory.
 
 ## Reset and isolation
 
 The browser demo holds sample data in memory. It uses no local storage, cookies, IndexedDB, or network API. **Reset demo** restores the bundled view. **View install command** returns to clone-and-install instructions with a source repository link.
 
-The CLI demo uses a unique directory named `permit-map-demo-<process>-<time>`. The operating system may clear that directory later. It never becomes a real Permit Map data namespace because the CLI saves no product state.
+The CLI demo uses a unique directory named `permit-map-demo-<process>-<time>`. The operating system may clear that directory later. It reads no caller paths and changes nothing outside that directory. It never becomes a real Permit Map data namespace because the CLI saves no product state.

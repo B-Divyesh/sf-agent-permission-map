@@ -11,7 +11,7 @@ One-click sample: <https://agent-permission-map.sociobot.in/?demo=1>
 
 ## Try the sandbox
 
-The demo command copies the bundled sample policies into a new temporary directory. It does not inspect the current repository. A demo `--output` path must be relative and is written inside that temporary directory.
+The demo command copies bundled policies into a new temporary directory. It does not read the current repository. A demo `--output` path stays inside that directory.
 
 ```sh
 cargo run -- demo

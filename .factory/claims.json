@@ -148,9 +148,9 @@
   },
   {
     "id": "demo-isolated",
-    "claim": "The demo command changes nothing outside its temporary directory.",
+    "claim": "The demo command does not read the caller directory or change anything outside its temporary directory.",
     "where": "README sandbox section and CLI stderr",
     "test": "npm test -- --grep @claim:demo-isolated",
-    "sandbox": "fresh caller directory with a sentinel file; run the built demo binary and verify the caller remains unchanged"
+    "sandbox": "fresh caller directory with policy and data decoys; use an LD_PRELOAD open/openat trace while running the built demo binary and assert no caller path is opened or changed"
   }
 ]

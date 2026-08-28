@@ -262,7 +262,9 @@ fn run_demo(format: Format, output: Option<PathBuf>) -> Result<(), String> {
         .or_else(|| matches!(format, Format::Markdown).then(|| root.join("permit-map-report.md")));
     write_output(format_report(&report, format)?, output, &report)?;
     eprintln!("Demo files: {}", root.display());
-    eprintln!("Nothing outside this temporary directory was read or changed.");
+    eprintln!(
+        "The demo does not read the caller directory or change anything outside its temporary directory."
+    );
     Ok(())
 }
 

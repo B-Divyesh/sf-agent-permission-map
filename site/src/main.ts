@@ -209,8 +209,9 @@ function bindActions(): void {
   document.querySelector<HTMLButtonElement>("#reset-demo")?.addEventListener("click", () => {
     const status = document.querySelector<HTMLParagraphElement>("#demo-status")!;
     status.textContent = "Sample reset. Claude denies win across scopes; the sample Codex project is trusted.";
-    document.querySelector<HTMLTableElement>("table")?.classList.add("reset-pulse");
-    setTimeout(() => document.querySelector<HTMLTableElement>("table")?.classList.remove("reset-pulse"), 240);
+    const tables = document.querySelectorAll<HTMLTableElement>(".first-screen-table, #full-rule-table");
+    tables.forEach(table => table.classList.add("reset-pulse"));
+    setTimeout(() => tables.forEach(table => table.classList.remove("reset-pulse")), 240);
   });
 }
 

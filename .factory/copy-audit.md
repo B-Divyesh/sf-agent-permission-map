@@ -71,10 +71,15 @@ Read-aloud check: “Resolve coding-agent permissions before an agent runs. For 
 
 | Copy | Words | Result |
 |---|---:|---|
+| The demo command copies bundled policies into a new temporary directory. | 11 | `demo-isolated` |
+| It does not read the current repository. | 7 | `demo-isolated` |
+| A demo `--output` path stays inside that directory. | 9 | `demo-isolated` |
 | Missing paths, unreadable files, and malformed supported files exit with code 2 and an actionable error. | 16 | `cli-errors` |
 | It does not run agents, scan source files, or store secrets. | 11 | `cli-local`; `policy-files`; `no-secret-storage` |
 | Every report includes this limitation instead of guessing. | 8 | `report-limitations` |
 | CLI flags the inspector cannot observe remain a report limitation unless you supply them. | 14 | `report-limitations` |
+
+The demo-isolated test traces `open` and `openat` calls while the binary runs from a caller directory. It finds no caller path read.
 
 The error claim covers every listed input class. Its test asserts the cause, exit status, and a concrete recovery step.
 

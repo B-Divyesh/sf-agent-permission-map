@@ -201,8 +201,12 @@ pub fn inspect_with_options(root: &Path, options: InspectOptions) -> Result<Repo
         ));
     }
 
-    let root =
-        fs::canonicalize(root).map_err(|e| format!("Cannot open {}: {e}", root.display()))?;
+    let root = fs::canonicalize(root).map_err(|e| {
+        format!(
+            "Cannot open {}: {e}. Check that the directory is readable, then try again.",
+            root.display()
+        )
+    })?;
     let mut candidates: Vec<(String, Layer, PathBuf, usize)> = Vec::new();
     if options.include_global {
         candidates.push((
@@ -504,11 +508,10 @@ fn parse_claude(
         ask: Option<Vec<String>>,
         deny: Option<Vec<String>>,
     }
-    let input =
-        fs::read_to_string(path).map_err(|e| format!("Cannot read {}: {e}", path.display()))?;
+    let input = read_policy(path)?;
     let settings: Settings = serde_json::from_str(&input).map_err(|e| {
         format!(
-            "Cannot parse {} as Claude settings JSON: {e}",
+            "Cannot parse {} as Claude settings JSON: {e}. Fix the JSON syntax, then run Permit Map again.",
             path.display()
         )
     })?;
@@ -535,10 +538,13 @@ fn parse_codex_config(
     out: &mut Vec<RawRule>,
     notes: &mut Vec<String>,
 ) -> Result<(), String> {
-    let input =
-        fs::read_to_string(path).map_err(|e| format!("Cannot read {}: {e}", path.display()))?;
-    let value: toml::Value = toml::from_str(&input)
-        .map_err(|e| format!("Cannot parse {} as Codex TOML: {e}", path.display()))?;
+    let input = read_policy(path)?;
+    let value: toml::Value = toml::from_str(&input).map_err(|e| {
+        format!(
+            "Cannot parse {} as Codex TOML: {e}. Fix the TOML syntax, then run Permit Map again.",
+            path.display()
+        )
+    })?;
     if let Some(mode) = value.get("sandbox_mode").and_then(|v| v.as_str()) {
         let effect = match mode {
             "danger-full-access" => Effect::Allow,
@@ -586,13 +592,21 @@ fn parse_codex_rules(
     priority: usize,
     out: &mut Vec<RawRule>,
 ) -> Result<(), String> {
-    let input =
-        fs::read_to_string(path).map_err(|e| format!("Cannot read {}: {e}", path.display()))?;
-    let mut parser = CodexRulesParser::new(&input)
-        .map_err(|error| format!("Cannot parse {} as Codex rules: {error}", path.display()))?;
+    let input = read_policy(path)?;
+    let mut parser = CodexRulesParser::new(&input).map_err(|error| {
+        format!(
+            "Cannot parse {} as Codex rules: {error}. Fix the rules syntax, then run Permit Map again.",
+            path.display()
+        )
+    })?;
     for parsed in parser
         .parse()
-        .map_err(|error| format!("Cannot parse {} as Codex rules: {error}", path.display()))?
+        .map_err(|error| {
+            format!(
+                "Cannot parse {} as Codex rules: {error}. Fix the rules syntax, then run Permit Map again.",
+                path.display()
+            )
+        })?
     {
         for pattern in parsed.patterns {
             push_rule(
@@ -607,6 +621,15 @@ fn parse_codex_rules(
         }
     }
     Ok(())
+}
+
+fn read_policy(path: &Path) -> Result<String, String> {
+    fs::read_to_string(path).map_err(|error| {
+        format!(
+            "Cannot read {}: {error}. Check that your account can read the file, then try again.",
+            path.display()
+        )
+    })
 }
 
 #[derive(Clone, Debug)]

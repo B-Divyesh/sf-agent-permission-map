@@ -54,9 +54,17 @@ Read-aloud check: “See agent permissions before they run. For engineers using 
 | View install command | 3 | Pass |
 | Check this page and the project changelog for changes. | 9 | Pass |
 
+## README error contract
+
+| Copy | Words | Result |
+|---|---:|---|
+| Missing paths, unreadable files, and malformed supported files exit with code 2 and an actionable error. | 16 | `cli-errors` |
+
+The error claim covers every listed input class. Its test asserts the cause, exit status, and a concrete recovery step.
+
 ## Catalog description
 
-“See resolved coding-agent permissions before an agent runs.” — 8 words, 59 characters, starts with a verb.
+“Resolve coding-agent permissions before an agent runs.” — 7 words, 55 characters, starts with a verb.
 
 ## Terminology
 

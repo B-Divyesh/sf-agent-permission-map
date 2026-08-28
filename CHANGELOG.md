@@ -2,6 +2,7 @@
 
 ## 0.1.0 — repair
 
+- Explain how to recover from unreadable and malformed policy files while preserving exit code `2`.
 - Parse documented multiline Codex rules, union patterns, and default decisions; select the most restrictive exact command rule.
 - Refuse output aliases to discovered policy files and create reports only at new paths.
 - Keep explicit CLI demo reports inside the generated temporary directory.

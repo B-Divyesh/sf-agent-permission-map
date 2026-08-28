@@ -1,1 +1,1 @@
-See resolved coding-agent permissions before an agent runs.
+Resolve coding-agent permissions before an agent runs.

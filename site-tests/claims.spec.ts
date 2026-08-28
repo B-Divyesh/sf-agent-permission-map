@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { linkSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, linkSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -276,20 +276,72 @@ test("inspection does not change any discovered vendor settings", { tag: "@claim
   }
 });
 
-test("bad paths and malformed supported policies exit with code 2", { tag: "@claim:cli-errors" }, () => {
+test("missing, unreadable, and malformed policies exit 2 with recovery steps", { tag: "@claim:cli-errors" }, () => {
   const root = mkdtempSync(join(tmpdir(), "permit-map-errors-"));
   try {
-    expect(spawnSync("cargo", ["run", "--quiet", "--", "inspect", join(root, "missing"), "--no-global"]).status).toBe(2);
+    const binary = resolve(process.cwd(), process.platform === "win32" ? "target/debug/permit-map.exe" : "target/debug/permit-map");
+    const missing = spawnSync(binary, ["inspect", join(root, "missing"), "--no-global"], { encoding: "utf8" });
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toContain("does not exist");
+    expect(missing.stderr).toContain("Choose a repository directory and try again");
+
     mkdirSync(join(root, ".claude"));
     writeFileSync(join(root, ".claude", "settings.json"), "not json");
-    expect(spawnSync("cargo", ["run", "--quiet", "--", "inspect", root, "--no-global"]).status).toBe(2);
+    const malformedClaude = spawnSync(binary, ["inspect", root, "--no-global"], { encoding: "utf8" });
+    expect(malformedClaude.status).toBe(2);
+    expect(malformedClaude.stderr).toContain("Cannot parse");
+    expect(malformedClaude.stderr).toContain("Fix the JSON syntax, then run Permit Map again");
+
     const codexRoot = mkdtempSync(join(tmpdir(), "permit-map-rules-errors-"));
     try {
       mkdirSync(join(codexRoot, ".codex/rules"), { recursive: true });
       writeFileSync(join(codexRoot, ".codex/rules/default.rules"), 'prefix_rule(pattern = ["git"], decision = "forbidden"');
-      expect(spawnSync("cargo", ["run", "--quiet", "--", "inspect", codexRoot, "--no-global"]).status).toBe(2);
+      const malformedRules = spawnSync(binary, ["inspect", codexRoot, "--no-global"], { encoding: "utf8" });
+      expect(malformedRules.status).toBe(2);
+      expect(malformedRules.stderr).toContain("Cannot parse");
+      expect(malformedRules.stderr).toContain("Fix the rules syntax, then run Permit Map again");
     } finally {
       rmSync(codexRoot, { recursive: true, force: true });
+    }
+
+    const codexConfigRoot = mkdtempSync(join(tmpdir(), "permit-map-toml-errors-"));
+    try {
+      mkdirSync(join(codexConfigRoot, ".codex"));
+      writeFileSync(join(codexConfigRoot, ".codex/config.toml"), 'sandbox_mode = "workspace-write');
+      const malformedToml = spawnSync(binary, ["inspect", codexConfigRoot, "--no-global"], { encoding: "utf8" });
+      expect(malformedToml.status).toBe(2);
+      expect(malformedToml.stderr).toContain("Cannot parse");
+      expect(malformedToml.stderr).toContain("Fix the TOML syntax, then run Permit Map again");
+    } finally {
+      rmSync(codexConfigRoot, { recursive: true, force: true });
+    }
+
+    if (process.platform !== "win32") {
+      const unreadableRoot = mkdtempSync(join(tmpdir(), "permit-map-unreadable-"));
+      const policyDirectory = join(unreadableRoot, ".claude");
+      const policy = join(policyDirectory, "settings.json");
+      const isolatedBinary = join(unreadableRoot, "permit-map");
+      try {
+        mkdirSync(policyDirectory);
+        writeFileSync(policy, '{"permissions":{"allow":["Read(src/**)"]}}');
+        copyFileSync(binary, isolatedBinary);
+        chmodSync(unreadableRoot, 0o755);
+        chmodSync(policyDirectory, 0o755);
+        chmodSync(policy, 0o000);
+        chmodSync(isolatedBinary, 0o755);
+        const privilege = process.getuid?.() === 0 ? { uid: 65534, gid: 65534 } : {};
+        const unreadable = spawnSync(isolatedBinary, ["inspect", unreadableRoot, "--no-global"], {
+          encoding: "utf8",
+          ...privilege,
+        });
+        expect(unreadable.status).toBe(2);
+        expect(unreadable.stderr).toContain("Cannot read");
+        expect(unreadable.stderr).toMatch(/Permission denied|Access is denied/);
+        expect(unreadable.stderr).toContain("Check that your account can read the file, then try again");
+      } finally {
+        chmodSync(policy, 0o600);
+        rmSync(unreadableRoot, { recursive: true, force: true });
+      }
     }
   } finally {
     rmSync(root, { recursive: true, force: true });

@@ -37,7 +37,10 @@ fn malformed_policy_returns_a_useful_error() {
         .assert()
         .code(2)
         .stderr(predicate::str::contains("Cannot parse"))
-        .stderr(predicate::str::contains("Claude settings JSON"));
+        .stderr(predicate::str::contains("Claude settings JSON"))
+        .stderr(predicate::str::contains(
+            "Fix the JSON syntax, then run Permit Map again",
+        ));
     std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -127,7 +130,10 @@ fn malformed_codex_rules_return_a_useful_error() {
         .assert()
         .code(2)
         .stderr(predicate::str::contains("Cannot parse"))
-        .stderr(predicate::str::contains("Codex rules"));
+        .stderr(predicate::str::contains("Codex rules"))
+        .stderr(predicate::str::contains(
+            "Fix the rules syntax, then run Permit Map again",
+        ));
     std::fs::remove_dir_all(root).unwrap();
 }
 

@@ -113,10 +113,10 @@
   },
   {
     "id": "cli-errors",
-    "claim": "Missing paths and malformed supported policy files exit with code 2.",
+    "claim": "Missing paths, unreadable files, and malformed supported policy files exit with code 2 and an error that gives a recovery step.",
     "where": "README usage",
     "test": "npm test -- --grep @claim:cli-errors",
-    "sandbox": "temporary repository with a missing path and malformed Claude settings JSON"
+    "sandbox": "temporary repositories with a missing path, malformed Claude and Codex policies, and a mode-000 policy read by an unprivileged process; assert status, cause, and recovery step"
   },
   {
     "id": "vendor-boundaries",

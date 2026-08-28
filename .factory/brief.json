@@ -1,0 +1,11 @@
+{
+  "slug": "agent-permission-map",
+  "title": "Permit Map",
+  "territory": "devtools-data",
+  "user": "Engineers using coding agents across several repositories who need to see the effective allow/deny policy before an agent runs.",
+  "smallest_useful_product": "A local CLI that reads configured agent policy files, resolves precedence into an allow/deny table, highlights shadowed rules, and emits a reviewable Markdown report.",
+  "artifact_class": "cli",
+  "monetization": "free",
+  "constraints": "Parse only local configuration; never read secret values; adapters must clearly state unsupported precedence semantics.",
+  "summary": "Resolve coding-agent permissions before an agent runs."
+}

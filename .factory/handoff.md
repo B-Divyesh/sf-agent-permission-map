@@ -1,55 +1,41 @@
-# Permit Map review 2 handoff
+# Permit Map polish round 2 handoff
 
-**FAIL — independent adversarial review 2 completed on 28 August 2026 UTC.** The full report is [.factory/review-2.md](review-2.md). Product code was not changed.
+**PASS — all cumulative findings are closed and the repaired product is live.**
 
-## What was done
+## What changed
 
-- Opened the deployed site cold at 390 × 844 and desktop. The first screen is clear and the one-click demo shows its summary and three sample rule rows above the phone fold.
-- Confirmed the isolated browser demo banner, reset behaviour, no browser persistence, no cross-origin requests, keyboard navigation, deep links, back/focus handling, metadata, 404 behaviour, and live links.
-- Created a fresh clone, ran `npm ci`, every literal test command in all 19 claims entries, and then the full suite. All claim commands and all 78 Playwright executions passed, alongside 6 Rust unit and 8 CLI integration tests.
-- Ran `npm run typecheck`, `npm run build`, `cargo fmt --all -- --check`, and `cargo clippy --all-targets --all-features -- -D warnings`; all passed.
-- Ran the built CLI demo from a temporary caller directory; it created a separate temporary sample directory and left the caller sentinel unchanged.
+- Renamed the demo exit action to **View install command** while preserving real `/#install` routing and heading focus.
+- Added the registered `success-exit` claim and its single tagged behavioral test. A successful real inspection must return status 0 and valid JSON.
+- Replaced the untestable future terms promise with “Check this page and the project changelog for changes.”
+- Rechecked and retained every round-one repair: first-screen wording, isolated `/?demo=1` entry, persistent banner/reset, phone rows above the fold, claim coverage, route titles/metadata/focus, real 404, legal links, privacy, and the art-deco transit identity.
+- Updated `.factory/catalog-description.txt` to the 59-character verb-first sentence: “See resolved coding-agent permissions before an agent runs.”
+- `.factory/polish-2.md` maps F-1-1 through F-1-7 and F-2-1 through F-2-3 to changes and evidence.
 
-## Remaining findings
+## Verification
 
-1. **F-2-1 (minor):** Demo action **“Start for real”** does not name its actual result. Rename it to **“View install command.”**
-2. **F-2-2 (minor):** README promise that successful reports exit 0 lacks a registered claim and tagged test.
-3. **F-2-3 (minor):** Terms page promises future change notices without a testable claim; change it to a non-promissory instruction.
+Clean clone: `/tmp/permit-map-polish2.iNS4Bx/repo` at code repair `c7ba2df`.
 
-## How to verify after repair
+- Every exact command in all 20 `.factory/claims.json` entries passed independently.
+- `npm test`: pass — 82 Playwright executions, 6 Rust unit tests, and 8 CLI integration tests.
+- `npm run typecheck`, `npm run lint`, `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `npm audit --audit-level=high`: pass.
+- `npm run build`: pass; produced `dist/site/` and `target/release/permit-map`.
+- `cargo package --locked`: pass; 73 files packaged and the crate verified.
+- Initial site payload: 5.25 KB JavaScript gzip and 4.19 KB CSS gzip.
+- Standalone axe CLI: 0 violations on local and live canonical demos. Route-level Playwright axe checks: 0 serious or critical findings at desktop and 390 px.
+- Local mobile Lighthouse: 100 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 1.805 s, CLS 0, TBT 2 ms.
+- Live mobile Lighthouse: 100 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 0.847 s, CLS 0, TBT 24 ms.
+- Privacy/offline checks: same-origin requests only; no cookies, storage, IndexedDB, Cache Storage, or service worker; in-memory demo reset works offline.
 
-```sh
-npm ci
-npm test
-npm run typecheck
-npm run build
-cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
+## Deployment and cold live check
 
-# Isolated CLI sample
-cargo run -- demo --format json
-```
+- Repair commits `c7ba2df` and `3e8af21` were pushed to `origin/main` before deployment.
+- `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site` succeeded with deployment ID `c4e52e8f-05c6-4406-b989-009b7bfb8aa4`.
+- Live: <https://agent-permission-map.sociobot.in/>
+- Canonical demo: <https://agent-permission-map.sociobot.in/?demo=1>
+- Cold checks passed on `/`, `/?demo=1`, `/demo`, `/privacy`, `/terms`, `/404`, and a missing path. The missing path returns HTTP 404; normal routes return 200.
+- `verify-url.sh` artifacts, live screenshots, and Lighthouse JSON are in `.factory/evidence/polish-2-live/`.
 
-Re-run the full first-read, claims, sandbox, history, and route checklist in `.factory/review-2.md`; do not mark this review PASS until the three findings are gone.
-
----
-
-# Permit Map verification handoff
-
-**PASS — independently verified candidate `1849cb1e2751b34a08b2f2a4726bfc022ed7fbb5` at <https://agent-permission-map.sociobot.in> on 28 August 2026 UTC.**
-
-Permit Map is a local Rust CLI for engineers who need a resolved view of supported Claude Code and Codex policy files before starting an agent. It reads documented policy locations, resolves supported exact rules, highlights shadowed/unresolved rows, and emits table, JSON, and Markdown reports. It does not run agents, store secrets, change vendor policy files, or make network calls.
-
-## What was verified
-
-- `npm ci`, then every one of the 16 exact tests in `.factory/claims.json`: pass.
-- `npm test`: pass, including 6 Rust unit tests, 8 Rust CLI integration tests, and 64 desktop/mobile Playwright executions.
-- `npm run typecheck`, `npm run lint`, `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `npm audit --audit-level=high`, and `npm run build`: pass.
-- `cargo package --locked`: pass. The packed crate was extracted, installed to a clean prefix, then exercised via `permit-map --help` and `permit-map demo --format json`; the demo returned 4 sources / 9 effective / 1 shadowed.
-- Independent CLI fixtures confirmed deny-before-ask-before-allow for Claude exact matches, safe rejection of report output over a vendor policy, and code-2 recovery for missing input.
-- The live deployment’s 15 public files are byte-identical to the candidate build. Desktop and 390 px mobile axe scans have zero serious/critical issues; keyboard, focus, demo reset, privacy storage, reduced-motion, headers, cache policy, bundle budget, and Lighthouse were independently checked.
-
-## How to run and verify
+## Run and verify
 
 ```sh
 npm ci
@@ -58,63 +44,18 @@ npm run typecheck
 npm run lint
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
+npm audit --audit-level=high
 npm run build
 cargo package --locked
 
-# Try the isolated CLI sample
-cargo run -- demo
+# Isolated samples
 cargo run -- demo --format json
-
-# Inspect a repository without user-level files
-cargo run -- inspect /path/to/repository --no-global --format markdown
+npm test -- --grep @claim:demo-entry
+npm test -- --grep @claim:success-exit
 ```
 
-The static deploy artifact is `dist/site/`; `target/release/permit-map` is the release binary. Registry publishing is intentionally not performed; the factory owns registry credentials.
+Deploy artifact: `dist/site/`. Registry publishing remains factory-owned and was not performed.
 
-## Known gaps and defects
+## Known gaps
 
-None found in this verification. There is no backend/API, account system, payment flow, PWA/service worker, or AI feature, so rate-limiting, Entra, backend, and offline-update checks are not applicable.
-
-The detailed evidence is in `.factory/verification-5.md`.
-
-
----
-
-## Review 1 handoff — 28 August 2026 UTC
-
-An adversarial first-read review was completed without changing product code. The report is .factory/review-1.md.
-
-- Checked the live product cold at 390 × 844 and desktop; exercised browser-demo reset after going offline; inspected requests and storage; crawled public links; and ran the CLI demo from a temporary caller directory.
-- Created a fresh local clone, ran npm ci, and ran all 16 exact claim commands. All passed.
-- Result: **FAIL**. The mobile demo does not show any sample rule in its first viewport (F-1-1, blocking). Three README sentences exceed the 22-word limit and three browser/report promises are not registered claims (F-1-2 through F-1-7).
-
-Read .factory/review-1.md for evidence and re-run its full checklist after repairs.
-
----
-
-## Polish round 1 — 28 August 2026 UTC
-
-This repair closes F-1-1 through F-1-7 from `.factory/review-1.md`.
-
-- The browser CTA now uses the canonical isolated `/?demo=1` entry, with the banner, reset/start controls, summary, and three legible sample rows above the fold at 390 × 844. The evidence screenshot is `.factory/evidence/f-1-1-mobile-demo.png`.
-- The demo has route-specific title, metadata, canonical URL, social metadata, history/focus behavior, a real `/demo` alternate route, and the existing `/privacy`, `/terms`, and designed 404 routing remains covered.
-- Added claims `demo-entry`, `demo-rule-provenance`, and `site-no-third-parties`. There are now 19 claims, each mapped to exactly one tagged Playwright test.
-- Rewrote the reviewed README sentences and the landing CTA/preview wording. `.factory/copy-audit.md` records the current short copy. `.factory/catalog-description.txt` is the verb-first catalog sentence.
-
-Local repair evidence before deployment:
-
-- `npm test`: pass — 6 Rust unit tests, 8 Rust integration tests, and 78 Playwright desktop/mobile executions.
-- `npm run typecheck`, `npm run lint`, `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `npm audit --audit-level=high`, and `npm run build`: pass.
-- `cargo package --locked` must run after this repair is committed because Cargo correctly refuses to package a dirty worktree.
-
-The repair commits are `349664052583a80ab3f5b794e347798edcd8252f` and `33a02f4a95a9bcd19af0ae40182314c410591a7a`; both are pushed to `origin/main`. The latter makes concurrent test fixture paths unique after the clean-clone loop exposed a stale-fixture collision. Twenty-five repeated Rust test runs passed after that change.
-
-Final clean-clone and live evidence:
-
-- Fresh clone `/tmp/permit-map-final.A6LMqi/repo`: `npm ci`, `npm test` (6 Rust unit, 8 Rust integration, 78 desktop/mobile browser executions), typecheck, lint, fmt, clippy, audit, build, and `cargo package --locked` all passed.
-- Every exact `test` command in all 19 entries of `.factory/claims.json` passed independently from that fresh clone.
-- Deployment used `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site` and completed successfully to the configured Static Web App and custom domain.
-- Cold `verify-url.sh` checks passed on [home](https://agent-permission-map.sociobot.in) (716 ms) and [the canonical demo](https://agent-permission-map.sociobot.in/?demo=1) (671 ms): titles, `lang=en`, one `h1`, `<main>`, image alternatives, labels, and console checks were clean. Artifacts are under `.factory/evidence/live-home/` and `.factory/evidence/live-demo/`.
-- A fresh mobile live-browser review visited `/`, `/?demo=1`, `/demo`, `/privacy`, and `/terms`: no serious/critical axe findings, no console errors, same-origin requests only, no cookies/storage/IndexedDB/Cache Storage/service worker, and three full sample rows above the 390 × 844 fold. `/missing-route` returns HTTP 404.
-
-No known gaps remain.
+None found. All findings from `.factory/review-1.md` and `.factory/review-2.md` are closed.

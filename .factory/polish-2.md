@@ -29,4 +29,13 @@ Base reviewed: `374410249ae55dcb7b0e85db47fc1f9c40f01cdc`. This round rechecked 
 
 ## Live deployment evidence
 
-To be recorded after the committed artifact is deployed and opened cold.
+- Deployed `dist/site/` with `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site`; Azure deployment ID `c4e52e8f-05c6-4406-b989-009b7bfb8aa4` succeeded.
+- Cold `verify-url.sh` runs passed for [home](https://agent-permission-map.sociobot.in/), [the canonical demo](https://agent-permission-map.sociobot.in/?demo=1), and [terms](https://agent-permission-map.sociobot.in/). Titles, language, one h1, main, image alternatives, labels, and normal-route console checks were clean. Evidence is under `.factory/evidence/polish-2-live/`.
+- A fresh 390 × 844 live browser clicked the home CTA and found the persistent banner, 4/9/1 summary, and three complete sample rows above the fold. **View install command** moved focus to the install heading. Reset worked after the context went offline. Screenshot: [.factory/evidence/polish-2-live/demo-cold-mobile.png](evidence/polish-2-live/demo-cold-mobile.png).
+- Live `/demo`, `/privacy`, `/terms`, and `/404` returned 200 with route titles, canonical metadata, one h1, one main, footer legal links, and zero serious or critical axe findings. `/missing-route-polish-2` returned HTTP 404 with the designed page and the same structural checks.
+- The live terms page contains the new instruction and no future-change promise.
+- The complete live crawl made only same-origin requests and ended with no cookies, local/session storage, IndexedDB, Cache Storage, or service worker. Normal routes produced no console errors; Chromium logged only the expected failed-document entry for the intentional HTTP 404 request.
+- Standalone axe CLI 4.10.3 found 0 violations on the live canonical demo.
+- Live mobile Lighthouse: performance 100, accessibility 100, best practices 100, SEO 100, LCP 0.847 s, CLS 0, TBT 24 ms. Report: `.factory/evidence/polish-2-live/lighthouse-mobile.json`.
+
+No finding from review rounds 1 or 2 remains open.

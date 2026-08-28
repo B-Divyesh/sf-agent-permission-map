@@ -46,9 +46,10 @@ cargo install --path .
 permit-map inspect . --codex-trust trusted
 ```
 
-Deployment class remains static. Deploy `dist/site/`; the `main` push is the configured factory deployment trigger. No credentials, analytics, or external runtime services are required.
+Deployment class remains static. Deploy `dist/site/`; `main` was pushed at `d3a5d56` as the configured factory deployment trigger. No credentials, analytics, or external runtime services are required.
 
 ## Known limits
 
 - Codex CLI flags and project trust cannot be discovered from policy files alone. Permit Map marks affected project rows unresolved until the caller supplies the trust setting and any relevant `--codex-config` values. This is intentional fail-safe behavior, not an inferred effective policy.
 - Offline reload and server-side identity checks are not applicable: this is a local CLI with a static documentation/demo site and makes no offline claim or backend/API request.
+- The live edge still returned the prior candidate (`Last-Modified: 11:22:38 UTC`) after the push and two delayed checks through 12:38 UTC. The committed `dist/site/` artifact is ready; the remaining edge update is owned by the external factory deployment trigger.

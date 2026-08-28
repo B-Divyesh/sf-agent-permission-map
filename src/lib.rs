@@ -1152,16 +1152,20 @@ fn escape_md(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMP_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
     fn temp_root() -> PathBuf {
         let name = format!(
-            "permit-map-test-{}-{}",
+            "permit-map-test-{}-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed),
         );
         let path = std::env::temp_dir().join(name);
         fs::create_dir_all(&path).unwrap();

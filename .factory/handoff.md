@@ -1,61 +1,34 @@
-# Permit Map polish round 2 handoff
+# Permit Map adversarial review 3 handoff
 
-**PASS — all cumulative findings are closed and the repaired product is live.**
+**Verdict: FAIL — one minor finding remains.**
 
-## What changed
+## What was done
 
-- Renamed the demo exit action to **View install command** while preserving real `/#install` routing and heading focus.
-- Added the registered `success-exit` claim and its single tagged behavioral test. A successful real inspection must return status 0 and valid JSON.
-- Replaced the untestable future terms promise with “Check this page and the project changelog for changes.”
-- Rechecked and retained every round-one repair: first-screen wording, isolated `/?demo=1` entry, persistent banner/reset, phone rows above the fold, claim coverage, route titles/metadata/focus, real 404, legal links, privacy, and the art-deco transit identity.
-- Updated `.factory/catalog-description.txt` to the 59-character verb-first sentence: “See resolved coding-agent permissions before an agent runs.”
-- `.factory/polish-2.md` maps F-1-1 through F-1-7 and F-2-1 through F-2-3 to changes and evidence.
+- Completed the required cold first-read review on the live site at 390 × 844 and 1366 × 768.
+- Audited every landing-page and README sentence, plus headings and action labels.
+- Exercised the one-click browser demo, offline Reset, real-storage sentinels, request log, and CLI demo isolation.
+- Ran every literal command in all 20 claim entries from a separate clean clone at `7e39808e`.
+- Rechecked every finding from review rounds 1 and 2 against live behavior and repository source/tests.
+- Crawled live routes and links; checked titles, metadata, 404 behavior, focus/history, shared structure, visual identity, and axe results.
+- Wrote `.factory/review-3.md`. No product code was changed.
+
+## Result
+
+F-3-1 remains: README promises exit-2 handling for unreadable files and “an actionable error,” but `cli-errors` registers and tests only missing and malformed inputs. An independent unreadable-file run returned 2, while the unreadable and malformed messages did not consistently provide a next action.
 
 ## Verification
 
-Clean clone: `/tmp/permit-map-polish2.iNS4Bx/repo` at code repair `c7ba2df`.
+Clean clone: `/tmp/permit-map-review3.vLV5EJ/repo`, commit `7e39808efd94e6f857e8570badd18ecf4e9a3c34`.
 
-- Every exact command in all 20 `.factory/claims.json` entries passed independently.
-- `npm test`: pass — 82 Playwright executions, 6 Rust unit tests, and 8 CLI integration tests.
-- `npm run typecheck`, `npm run lint`, `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `npm audit --audit-level=high`: pass.
-- `npm run build`: pass; produced `dist/site/` and `target/release/permit-map`.
-- `cargo package --locked`: pass; 73 files packaged and the crate verified.
-- Initial site payload: 5.25 KB JavaScript gzip and 4.19 KB CSS gzip.
-- Standalone axe CLI: 0 violations on local and live canonical demos. Route-level Playwright axe checks: 0 serious or critical findings at desktop and 390 px.
-- Local mobile Lighthouse: 100 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 1.805 s, CLS 0, TBT 2 ms.
-- Live mobile Lighthouse: 100 performance, 100 accessibility, 100 best practices, 100 SEO; LCP 0.847 s, CLS 0, TBT 24 ms.
-- Privacy/offline checks: same-origin requests only; no cookies, storage, IndexedDB, Cache Storage, or service worker; in-memory demo reset works offline.
+- All 20 exact claim commands: pass.
+- `npm test`: pass — 82 Playwright, 6 Rust unit, and 8 Rust integration tests.
+- `npm run typecheck`, `npm run lint`, `npm run build`: pass.
+- Live axe at desktop and 390 px on home, canonical demo, `/demo`, `/privacy`, `/terms`, and a missing route: zero violations.
+- Live URL verifier on home and canonical demo: pass, no console errors.
+- Live crawl: all intended links returned 200; an intentional missing path returned the designed 404.
+- Live demo: same-origin requests only; Reset works offline; no demo-created cookies, browser storage, IndexedDB, Cache Storage, or service worker.
+- CLI demo: 4 sources, 9 effective, 1 shadowed, 10 rows; caller sentinel unchanged.
 
-## Deployment and cold live check
+## Next step
 
-- Repair commits `c7ba2df` and `3e8af21` were pushed to `origin/main` before deployment.
-- `/opt/fleet/lib/deploy-static.sh agent-permission-map dist/site` succeeded with deployment ID `c4e52e8f-05c6-4406-b989-009b7bfb8aa4`.
-- Live: <https://agent-permission-map.sociobot.in/>
-- Canonical demo: <https://agent-permission-map.sociobot.in/?demo=1>
-- Cold checks passed on `/`, `/?demo=1`, `/demo`, `/privacy`, `/terms`, `/404`, and a missing path. The missing path returns HTTP 404; normal routes return 200.
-- `verify-url.sh` artifacts, live screenshots, and Lighthouse JSON are in `.factory/evidence/polish-2-live/`.
-
-## Run and verify
-
-```sh
-npm ci
-npm test
-npm run typecheck
-npm run lint
-cargo fmt --all -- --check
-cargo clippy --all-targets --all-features -- -D warnings
-npm audit --audit-level=high
-npm run build
-cargo package --locked
-
-# Isolated samples
-cargo run -- demo --format json
-npm test -- --grep @claim:demo-entry
-npm test -- --grep @claim:success-exit
-```
-
-Deploy artifact: `dist/site/`. Registry publishing remains factory-owned and was not performed.
-
-## Known gaps
-
-None found. All findings from `.factory/review-1.md` and `.factory/review-2.md` are closed.
+Resolve F-3-1 by narrowing the README sentence or expanding the registered claim, error copy, and tagged test to cover unreadable files and concrete recovery guidance. Then rerun the full checklist.
